@@ -7,3 +7,7 @@ __pycache__/
 .cache/
 # *.db
 # *.pdf
+
+# Upload files directory - ignore all uploaded files but keep the directory
+upload_files/*
+!upload_files/.gitkeep
