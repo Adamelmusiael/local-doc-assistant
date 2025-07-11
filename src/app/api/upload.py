@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pathlib import Path
 import uuid
 from datetime import datetime
+from typing import Optional
 from src.db.database import get_session
 from src.db.models import Document
 
@@ -14,8 +15,8 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 async def upload_file(
     file: UploadFile = File(...),
     confidentiality: str = Form(...),
-    department: str = Form(...),
-    client: str = Form(...)
+    department: Optional[str] = Form(None),
+    client: Optional[str] = Form(None)
 ):
     """Upload a PDF file with metadata"""
     
@@ -55,13 +56,27 @@ async def upload_file(
             document_id = document.id
         
         # Prepare response with metadata
+        file_size_bytes = len(contents)
+        
+        # Helper function to format file size
+        def format_file_size(size_bytes):
+            if size_bytes < 1024:
+                return f"{size_bytes} B"
+            elif size_bytes < 1024**2:
+                return f"{size_bytes/1024:.1f} KB"
+            elif size_bytes < 1024**3:
+                return f"{size_bytes/(1024**2):.1f} MB"
+            else:
+                return f"{size_bytes/(1024**3):.1f} GB"
+        
         response = {
             "message": "File uploaded successfully and metadata saved to database",
             "document_id": document_id,
             "filename": file.filename,
             "saved_as": unique_filename,
             "file_path": str(file_path),
-            "file_size": len(contents),
+            "file_size_bytes": file_size_bytes,
+            "file_size_formatted": format_file_size(file_size_bytes),
             "metadata": {
                 "confidentiality": confidentiality,
                 "department": department,
