@@ -36,6 +36,39 @@ async def list_documents():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving documents: {str(e)}")
 
+@router.get("/stats")
+async def get_stats():
+    """Get statistics about documents in the database"""
+    try:
+        with get_session() as session:
+            # Test database connection
+            try:
+                # Simple query to test connection
+                session.exec(select(Document).limit(1)).first()
+                db_connection_status = "connected"
+            except Exception as db_error:
+                raise HTTPException(
+                    status_code=503, 
+                    detail=f"Database connection failed: {str(db_error)}"
+                )
+            
+            # Get document counts
+            total_count = len(session.exec(select(Document)).all())
+            processed_count = len(session.exec(select(Document).where(Document.processed == True)).all())
+
+            return {
+                "message": "Statistics retrieved successfully",
+                "database_status": db_connection_status,
+                "statistics": {
+                    "total_documents": total_count,
+                    "processed_documents": processed_count,  
+                    # Add new statistics in future
+                }
+            }
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving statistics: {str(e)}")
+
 @router.get("/{document_id}")
 async def get_document(document_id: int):
     """Get specific document metadata by ID"""
@@ -98,38 +131,3 @@ async def delete_document(document_id: int):
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
-    
-@router.get("/stats")
-async def get_stats():
-    """Get statistics about documents in the database"""
-    try:
-        with get_session() as session:
-            # Test database connection
-            try:
-                # Simple query to test connection
-                session.exec(select(Document).limit(1)).first()
-                db_connection_status = "connected"
-            except Exception as db_error:
-                raise HTTPException(
-                    status_code=503, 
-                    detail=f"Database connection failed: {str(db_error)}"
-                )
-            
-            # Get document counts
-            total_count = len(session.exec(select(Document)).all())
-            processed_count = len(session.exec(select(Document).where(Document.processed == True)).all())
-
-            return {
-                "message": "Statistics retrieved successfully",
-                "database_status": db_connection_status,
-                "statistics": {
-                    "total_documents": total_count,
-                    "processed_documents": processed_count,  
-                    # Add new statistics in future
-                }
-            }
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving statistics: {str(e)}")
