@@ -14,6 +14,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 @router.post("/")
 async def upload_file(
     file: UploadFile = File(...),
+    #filename: Optional[str] = Form(None),
     confidentiality: str = Form(...),
     department: Optional[str] = Form(None),
     client: Optional[str] = Form(None)
@@ -28,9 +29,10 @@ async def upload_file(
     if file.size == 0:
         raise HTTPException(status_code=400, detail="File is empty")
     
-    # Randomize filename
+    # Randomize filename - for unique path
     file_extension = Path(file.filename).suffix
     unique_filename = f"{uuid.uuid4()}{file_extension}"
+
     file_path = UPLOAD_DIR / unique_filename
     
     try:
