@@ -13,7 +13,16 @@ def preprocess_document_to_chunks(
     pdf_path: str,
     metadata: Dict
 ) -> List[Dict]:
-    """Return list of chunks with metadata from given PDF file."""
+    """
+    Converts a PDF document into structured chunks with metadata.
+    
+    Args:
+        pdf_path (str): Absolute path to the PDF file to process
+        metadata (Dict): Document metadata to attach to each chunk
+    
+    Returns:
+        List[Dict]: List of chunks with text, chunk_index, and metadata fields
+    """
     raw_text = extract_text_from_pdf(pdf_path)
     chunks = chunk_text(raw_text,chunk_size=500, chunk_overlap=50)
 
@@ -36,7 +45,7 @@ if __name__ == "__main__":
         """Simple test for the preprocess_document_to_chunks function"""
         
         # Test file path (assuming the CV file exists)
-        test_pdf_path = r"C:\projects\AI-Assistant\src\app\file_ingestion\Adam Musiał CV AI Specialist.pdf"
+        test_pdf_path = r"C:\projects\AI-Assistant\src\file_ingestion\Adam Musiał CV AI Specialist.pdf"
         
         # Check if test file exists
         if not os.path.exists(test_pdf_path):
