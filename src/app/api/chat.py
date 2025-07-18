@@ -94,7 +94,7 @@ async def chat_history():
 @router.delete("/history")
 async def clear_chat_history():
     """Clear chat history"""
-    return {"message": "Chat history cleared"}
+    return {"message": "!NOT IMPLEMENTED YET! Chat history cleared"}
 
 
 class PreprocessRequest(BaseModel):
@@ -128,6 +128,12 @@ def preprocess_documents(request: PreprocessRequest):
 
             # Index the chunks
             index_chunks(processed_chunks)
+
+            # Update document status in database
+            document.processed = True
+            session.add(document)
+            session.commit()
+
             results.append({"filename": filename, "chunks_added": len(processed_chunks), "metadata": metadata})
         return {"preprocessed": results}
     except Exception as e:

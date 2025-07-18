@@ -9,7 +9,7 @@ app = FastAPI(title="AI Assistant")
 @app.on_event("startup")
 def on_startup():
     init_db()
-    ensure_collection()  # Tworzy kolekcję tylko jeśli nie istnieje
+    ensure_collection()  # Create collection if it does not exist
 
 app.include_router(upload.router, prefix="/upload", tags=["Upload"])
 app.include_router(documents.router, prefix="/docs", tags=["Documents"])
