@@ -22,7 +22,7 @@ async def upload_file(
     """Upload a PDF file with metadata"""
     
     # is PDF?
-    if not file.filename.lower().endswith('.pdf'):
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed [currently]")
     
     # is empty? ! Warning: may cause errror if file.size is not available !!! DO TESTOWANIA 
@@ -31,8 +31,13 @@ async def upload_file(
     
     # Randomize filename - for unique path
     file_extension = Path(file.filename).suffix
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-
+    base_name = Path(file.filename).stem
+    candidate_name = f"{base_name}{file_extension}"
+    counter = 1
+    while (UPLOAD_DIR / candidate_name).exists():
+        candidate_name = f"{base_name}({counter}){file_extension}"
+        counter += 1
+    unique_filename = candidate_name
     file_path = UPLOAD_DIR / unique_filename
     
     try:

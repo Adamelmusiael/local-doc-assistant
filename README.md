@@ -22,3 +22,6 @@ UWAGA! Bez BE front nie ruszy - musza być spełnione wszytkie poprzednie kroki.
 
 Local URL: http://localhost:8501
 Network URL: http://192.168.0.3:8501
+
+Activate Qdrant before using the app:
+`bash docker run -p 6333:6333 qdrant/qdrant`

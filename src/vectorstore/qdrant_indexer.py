@@ -35,3 +35,17 @@ def index_chunks(chunks: List[dict], collection_name: str = "documents"):
     ]
     client.upsert(collection_name=collection_name, points=points)
     print(f"Sentences indexed: {len(points)} to Qdrant collection '{collection_name}'")
+
+def ensure_collection(collection_name: str = "documents"):
+    """Create Qdrant collection if it does not exist."""
+    from qdrant_client.http.exceptions import UnexpectedResponse
+    try:
+        # Check if collection exists
+        client.get_collection(collection_name)
+        print(f"Qdrant collection '{collection_name}' already exists.")
+    except Exception as e:
+        client.create_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
+        )
+        print(f"Qdrant collection '{collection_name}' has been created.")

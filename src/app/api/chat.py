@@ -5,6 +5,7 @@ from pathlib import Path
 from src.db.database import get_session
 from src.db.models import Document
 from sqlmodel import select
+from sqlalchemy import func
 
 # Add the src directory to Python path
 src_path = Path(__file__).parent.parent.parent
@@ -103,28 +104,34 @@ class PreprocessRequest(BaseModel):
 def preprocess_documents(request: PreprocessRequest):
     """Preprocess selected documents and add them to Qdrant index."""
     results = []
-    for filename in request.filenames:
-        file_path = UPLOAD_DIR / filename
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail=f"File {filename} not found")
+    try:
+        for filename in request.filenames:
+            file_path = UPLOAD_DIR / filename
+            if not file_path.exists():
+                raise HTTPException(status_code=404, detail=f"File {filename} not found")
 
-        # Retrieve metadata from the database
-        with get_session() as session:
-            document = session.exec(
-                select(Document).where(Document.pointer_to_loc == str(file_path))
-            ).first()
-            if not document:
-                raise HTTPException(status_code=404, detail=f"Metadata for file {filename} not found in database")
-            metadata = {
-                "confidentiality": document.confidentiality,
-                "department": document.department,
-                "client": document.client
-            }
+            # Retrieve metadata from the database
+            with get_session() as session:
+                document = session.exec(
+                    select(Document).where(func.lower(Document.pointer_to_loc).like(f"%{filename.lower()}"))
+                ).first()
+                if not document:
+                    raise HTTPException(status_code=404, detail=f"Metadata for file {filename} not found in database")
+                metadata = {
+                    "confidentiality": document.confidentiality,
+                    "department": document.department,
+                    "client": document.client
+                }
 
-        # Preprocess the document with actual metadata
-        processed_chunks = preprocess_document_to_chunks(str(file_path), metadata=metadata)
+            # Preprocess the document with actual metadata
+            processed_chunks = preprocess_document_to_chunks(str(file_path), metadata=metadata)
 
-        # Index the chunks
-        index_chunks(processed_chunks)
-        results.append({"filename": filename, "chunks_added": len(processed_chunks), "metadata": metadata})
-    return {"preprocessed": results}
+            # Index the chunks
+            index_chunks(processed_chunks)
+            results.append({"filename": filename, "chunks_added": len(processed_chunks), "metadata": metadata})
+        return {"preprocessed": results}
+    except Exception as e:
+        # Log error to console for debugging
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
