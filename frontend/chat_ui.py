@@ -44,7 +44,7 @@ def select_document_for_preprocessing():
                         
                         # Wyślij żądanie do endpointu preprocessingu
                         response = requests.post(
-                            f"{API_BASE_URL}/chat/documents/preprocess",
+                            f"{API_BASE_URL}/docs/preprocess",
                             json=preprocessing_data
                         )
                         

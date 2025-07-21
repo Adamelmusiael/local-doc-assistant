@@ -3,6 +3,10 @@ from src.db.database import get_session
 from src.db.models import Document
 from sqlmodel import select
 from pathlib import Path
+from pydantic import BaseModel
+from vectorstore.qdrant_indexer import index_chunks
+from file_ingestion.preprocessor import preprocess_document_to_chunks
+from sqlalchemy import func
 
 router = APIRouter()
 
@@ -131,3 +135,48 @@ async def delete_document(document_id: int):
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
+
+class PreprocessRequest(BaseModel):
+    filenames: list[str]
+
+@router.post("/preprocess")
+def preprocess_documents(request: PreprocessRequest):
+    """Preprocess selected documents and add them to Qdrant index."""
+    UPLOAD_DIR = Path("upload_files")
+    results = []
+    try:
+        for filename in request.filenames:
+            file_path = UPLOAD_DIR / filename
+            if not file_path.exists():
+                raise HTTPException(status_code=404, detail=f"File {filename} not found")
+
+            # Retrieve metadata from the database
+            with get_session() as session:
+                document = session.exec(
+                    select(Document).where(func.lower(Document.pointer_to_loc).like(f"%{filename.lower()}"))
+                ).first()
+                if not document:
+                    raise HTTPException(status_code=404, detail=f"Metadata for file {filename} not found in database")
+                metadata = {
+                    "confidentiality": document.confidentiality,
+                    "department": document.department,
+                    "client": document.client
+                }
+
+                # Preprocess the document with actual metadata
+                processed_chunks = preprocess_document_to_chunks(str(file_path), metadata=metadata)
+
+                # Index the chunks
+                index_chunks(processed_chunks)
+
+                # Update document status in database
+                document.processed = True
+                session.add(document)
+                session.commit()
+
+                results.append({"filename": filename, "chunks_added": len(processed_chunks), "metadata": metadata})
+        return {"preprocessed": results}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
