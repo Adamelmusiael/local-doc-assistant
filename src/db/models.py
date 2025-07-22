@@ -5,6 +5,7 @@ from datetime import datetime
 
 # main table prototype
 class Document(SQLModel, table=True):
+    __table_args__ = {"extend_existing": True}
     id: Optional[int] = Field(default=None, primary_key=True)
     filename: str
     content: Optional[str] = None
@@ -19,6 +20,7 @@ class Document(SQLModel, table=True):
 
 
 class ChatSession(SQLModel, table=True):
+    __table_args__ = {"extend_existing": True}
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -28,6 +30,7 @@ class ChatSession(SQLModel, table=True):
     session_metadata: Optional[str] = None # e.g. JSON string with additional information
 
 class ChatMessage(SQLModel, table=True):
+    __table_args__ = {"extend_existing": True}
     id: Optional[int] = Field(default=None, primary_key=True)
     session_id: int = Field(foreign_key="chatsession.id")
     role: str  # e.g. 'user', 'assistant', 'system', etc.

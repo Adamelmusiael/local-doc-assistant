@@ -7,6 +7,8 @@ from pydantic import BaseModel
 from vectorstore.qdrant_indexer import index_chunks
 from file_ingestion.preprocessor import preprocess_document_to_chunks
 from sqlalchemy import func
+from qdrant_client import QdrantClient
+from qdrant_client.models import VectorParams, Distance
 
 router = APIRouter()
 
@@ -103,6 +105,27 @@ async def get_document(document_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving document: {str(e)}")
 
+@router.delete("/delete_all_documents_and_chunks")
+def delete_all_documents_and_chunks():
+    """Delete all documents from the database and all vectors/chunks from Qdrant."""
+    try:
+        # Usuń wszystkie dokumenty z bazy
+        with get_session() as session:
+            docs = session.exec(select(Document)).all()
+            num_deleted = len(docs)
+            session.exec(Document.__table__.delete())
+            session.commit()
+        # Usuń wszystkie wektory z Qdrant
+        client = QdrantClient("http://localhost:6333")
+        client.recreate_collection(
+            collection_name="documents",
+            vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
+        )
+        return {"message": f"Deleted {num_deleted} documents and all chunks from Qdrant."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting all documents and chunks: {str(e)}")
+
+
 @router.delete("/{document_id}")
 async def delete_document(document_id: int):
     """Delete specific document by ID (both file and database record)"""
@@ -136,6 +159,26 @@ async def delete_document(document_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
 
+
+@router.delete("/delete_chunks/{document_id}")
+def delete_chunks_by_document_id(document_id: int):
+    """Delete all chunks/vectors in Qdrant for a given document_id."""
+    try:
+        client = QdrantClient("http://localhost:6333")
+        # Usuwamy wszystkie punkty, gdzie payload.document_id == document_id
+        client.delete(
+            collection_name="documents",
+            wait=True,
+            filter={
+                "must": [
+                    {"key": "document_id", "match": {"value": document_id}}
+                ]
+            }
+        )
+        return {"message": f"Chunks for document_id={document_id} deleted from Qdrant."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting chunks: {str(e)}")
+
 class PreprocessRequest(BaseModel):
     filenames: list[str]
 
@@ -158,6 +201,8 @@ def preprocess_documents(request: PreprocessRequest):
                 if not document:
                     raise HTTPException(status_code=404, detail=f"Metadata for file {filename} not found in database")
                 metadata = {
+                    "document_id": document.id,
+                    "file_path": document.pointer_to_loc,
                     "confidentiality": document.confidentiality,
                     "department": document.department,
                     "client": document.client
