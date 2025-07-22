@@ -14,5 +14,5 @@ class Document(SQLModel, table=True):
     client: Optional[str] = None
 
     pointer_to_loc: Optional[str] = None   # in case user asks for original file
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow) 
     processed: bool = Field(default=False)

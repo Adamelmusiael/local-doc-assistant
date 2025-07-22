@@ -5,9 +5,14 @@ __pycache__/
 .idea/
 .vscode/
 .cache/
-# *.db
-# *.pdf
+*.db
+# Ignore all pdf files
+*.pdf
+# Except those that are ment for testing
+!temp/test_files/*.pdf
 
 # Upload files directory - ignore all uploaded files but keep the directory
 upload_files/*
 !upload_files/.gitkeep
+
+temp/*
