@@ -7,6 +7,8 @@ __pycache__/
 .cache/
 *.db
 *.pdf
+# Except those that are ment for testing
+!temp/test_files/*.pdf
 
 # Upload files directory - ignore all uploaded files but keep the directory
 upload_files/*

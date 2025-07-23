@@ -8,7 +8,7 @@ client = QdrantClient("http://localhost:6333")
 
 def setup_collection(collection_name: str = "documents"):
     """Setup Qdrant collection with necessary parameters. 
-    If collection exists, deetes it, then creates a new one."""
+    If collection exists, deletes it, then creates a new one."""
     client.recreate_collection(
         collection_name=collection_name,
         vectors_config=VectorParams(size=1024, distance=Distance.COSINE) 

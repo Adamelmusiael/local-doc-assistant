@@ -24,7 +24,7 @@ def search_documents(query: str, limit: int = 5) -> List[Dict]:
     Returns:
         List[Dict]: List of search results with scores and metadata
     """
-    print(f"🔍 Searching for: '{query}' (limit: {limit})")
+    print(f"Searching for: '{query}' (limit: {limit})")
     
     try:
         # Initialize client
@@ -52,23 +52,23 @@ def search_documents(query: str, limit: int = 5) -> List[Dict]:
             }
             results.append(result)
         
-        print(f"✅ Found {len(results)} results")
+        print(f"Found {len(results)} results")
         return results
         
     except Exception as e:
-        print(f"❌ Search error: {e}")
+        print(f"Search error: {e}")
         return []
 
 if __name__ == "__main__":
-    print("🧪 Testing simple Qdrant search...")
+    print("Testing simple Qdrant search...")
     
     # Test connection
     try:
         client = QdrantClient("http://localhost:6333")
         collections = client.get_collections()
-        print(f"✅ Connected to Qdrant. Collections: {[c.name for c in collections.collections]}")
+        print(f"Connected to Qdrant. Collections: {[c.name for c in collections.collections]}")
     except Exception as e:
-        print(f"❌ Connection failed: {e}")
+        print(f"Connection failed: {e}")
         exit(1)
     
     # Test search
@@ -76,4 +76,4 @@ if __name__ == "__main__":
     for i, result in enumerate(results, 1):
         print(f"  {i}. Score: {result['score']:.3f} - {result['text'][:100]}...")
     
-    print("🎉 Test completed!")
+    print("Test completed!")

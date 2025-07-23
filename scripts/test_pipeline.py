@@ -45,7 +45,7 @@ def run_test():
         print("Collection setup successfully")
     except Exception as e:
         print(f"Failed to setup collection: {e}")
-        print("💡 SOLUTION: Start Qdrant server with: docker run -p 6333:6333 qdrant/qdrant")
+        print("SOLUTION: Start Qdrant server with: docker run -p 6333:6333 qdrant/qdrant")
         print("   Or install Qdrant locally and start it on port 6333")
         return False
     # Step 2: Preprocess documents to chunks
