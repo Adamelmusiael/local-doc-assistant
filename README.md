@@ -1,27 +1,35 @@
 # AI-Assistant
 
-Aby uruchomić testową apke należy:
-## 1. Clone repo
-`bash  git clone https://github.com/adammussial/AI-Assistant.git`
+## Szybki start – uruchomienie jednym poleceniem (Windows/Mac/Linux)
 
-## 2.Stwórz oraz aktywuj conda env
-do wypełnienia
+1. Zainstaluj [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac)
+2. Skopiuj plik `.env.example` do `.env` i uzupełnij klucz OpenAI oraz inne wymagane zmienne
+3. W katalogu projektu uruchom:
+   ```
+   docker-compose up --build
+   ```
+4. Backend: http://localhost:8000  
+   Frontend: http://localhost:8501
 
-## 3. uruchom apke:uvicorn src.app.main:app --reload
-`bash uvicorn src.app.main:app --reload`
+**To wszystko!**
 
-## 4. apka powinna się odpalić na:
-http://127.0.0.1:8000
+---
 
+### Szczegóły
+- Wszystkie usługi (backend, frontend, Qdrant) uruchamiają się automatycznie.
+- Nie musisz instalować Pythona, Qdrant, Streamlit itp. – wszystko działa w kontenerach.
+- Możesz zatrzymać aplikację poleceniem `docker-compose down`.
 
-Po uruchomieniu BE można odpalić streamlit (tymczasowy frontend na potrzeby mvp).
-UWAGA! Bez BE front nie ruszy - musza być spełnione wszytkie poprzednie kroki.
-# 1. Uruchom frontend:
-`bash streamlit run frontend/streamlit_app.py`
-# 2. dostęp powinien być prze:
+---
 
-Local URL: http://localhost:8501
-Network URL: http://192.168.0.3:8501
+## Pliki i konfiguracja
+- `docker-compose.yml` – definiuje wszystkie usługi
+- `Dockerfile` – backend (FastAPI)
+- `Dockerfile.frontend` – frontend (Streamlit)
+- `requirements.txt` – zależności Pythona
+- `.env` – klucze i zmienne środowiskowe (stwórz na podstawie `.env.example`)
 
-Activate Qdrant before using the app:
-`bash docker run -p 6333:6333 qdrant/qdrant`
+---
+
+## Dla zaawansowanych
+Możesz nadal uruchamiać backend i frontend ręcznie, ale Docker Compose jest najprostszy i najbardziej uniwersalny.
