@@ -7,6 +7,8 @@ from src.db.models import ChatSession, ChatMessage
 from sqlmodel import select
 from sqlalchemy import func
 from sqlmodel import delete
+import os
+import openai
 
 # Add the src directory to Python path
 src_path = Path(__file__).parent.parent.parent
@@ -25,7 +27,7 @@ UPLOAD_DIR = Path(__file__).parent.parent.parent.parent / "upload_files"
 
 class CreateChatSessionRequest(BaseModel):
     title: str
-    llm_model: str
+    llm_model: str | None = None
     user_id: str | None = None
     status: str | None = None
     session_metadata: str | None = None
@@ -100,21 +102,19 @@ def chat_message(request: ChatMessage):
 async def chat_message_with_metadata(session_id: int, request: ChatRequest):
     """Send a chat message, get answer with metadata (sources, confidence, hallucination)"""
     try:
-        model = request.model or "mistral"
+        model = request.model
+        if not model or model == "string":
+            with get_session() as session:
+                chat_session = session.exec(select(ChatSession).where(ChatSession.id == session_id)).first()
+                if chat_session and chat_session.llm_model:
+                    model = chat_session.llm_model
+                else:
+                    model = "mistral"
         result = handle_chat_message(session_id, request.question, model=model)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error handling chat message: {str(e)}")
 
-# @router.get("/history")
-# async def chat_history():
-#     """Get chat history"""
-#     return {"message": "Chat history - not implemented yet"}
-
-# @router.delete("/history")
-# async def clear_chat_history():
-#     """Clear chat history"""
-#     return {"message": "!NOT IMPLEMENTED YET! Chat history cleared"}
 
 @router.get("/chat_sessions")
 async def list_chat_sessions():
@@ -182,10 +182,16 @@ async def delete_chat_session(session_id: int):
 async def create_chat_session(request: CreateChatSessionRequest):
     """Create a new chat session and return its metadata"""
     try:
+        llm_model = request.llm_model.strip() if request.llm_model else ""
+        if llm_model == 'string':
+            llm_model = "mistral"
+
+        if not llm_model:
+            llm_model = "mistral"
         with get_session() as session:
             chat_session = ChatSession(
                 title=request.title,
-                llm_model=request.llm_model,
+                llm_model=llm_model,
                 user_id=request.user_id,
                 status=request.status,
                 session_metadata=request.session_metadata
