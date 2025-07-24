@@ -3,8 +3,10 @@ from qdrant_client.models import PointStruct, VectorParams, Distance
 from .embedder import embed_text
 from typing import List
 import uuid
+import os
 
-client = QdrantClient("http://localhost:6333")
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+client = QdrantClient(QDRANT_URL)
 
 def setup_collection(collection_name: str = "documents"):
     """Setup Qdrant collection with necessary parameters. 

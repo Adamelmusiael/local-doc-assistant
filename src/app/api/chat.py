@@ -23,7 +23,8 @@ from chat_logic.message_handler import handle_chat_message
 
 router = APIRouter()
 
-UPLOAD_DIR = Path(__file__).parent.parent.parent.parent / "upload_files" 
+LLM_API_URL = os.getenv("LLM_API_URL", "http://localhost:11434/api/generate")
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", Path(__file__).parent.parent.parent.parent / "upload_files"))
 
 class CreateChatSessionRequest(BaseModel):
     title: str
@@ -65,7 +66,7 @@ def chat_message(request: ChatMessage):
     try:
         # Send request to Ollama/Mistral
         response = requests.post(
-            "http://localhost:11434/api/generate",
+            LLM_API_URL,
             json={"model": "mistral", "prompt": prompt, "stream": False}
         )
 
@@ -124,15 +125,15 @@ async def list_chat_sessions():
             statement = select(ChatSession)
             sessions = session.exec(statement).all()
             sessions_list = []
-            for s in sessions:
+            for session in sessions:
                 sessions_list.append({
-                    "id": s.id,
-                    "title": s.title,
-                    "created_at": s.created_at.isoformat() if s.created_at else None,
-                    "llm_model": s.llm_model,
-                    "user_id": s.user_id,
-                    "status": s.status,
-                    "session_metadata": s.session_metadata
+                    "id": session.id,
+                    "title": session.title,
+                    "created_at": session.created_at.isoformat() if session.created_at else None,
+                    "llm_model": session.llm_model,
+                    "user_id": session.user_id,
+                    "status": session.status,
+                    "session_metadata": session.session_metadata
                 })
             return {
                 "message": "Chat sessions retrieved successfully",
@@ -219,15 +220,15 @@ async def get_chat_messages(session_id: int):
             statement = select(ChatMessage).where(ChatMessage.session_id == session_id).order_by(ChatMessage.timestamp)
             messages = session.exec(statement).all()
             messages_list = []
-            for m in messages:
+            for message in messages:
                 messages_list.append({
-                    "id": m.id,
-                    "role": m.role,
-                    "content": m.content,
-                    "timestamp": m.timestamp.isoformat() if m.timestamp else None,
-                    "sources": m.sources,
-                    "confidence": m.confidence,
-                    "hallucination": m.hallucination
+                    "id": message.id,
+                    "role": message.role,
+                    "content": message.content,
+                    "timestamp": message.timestamp.isoformat() if message.timestamp else None,
+                    "sources": message.sources,
+                    "confidence": message.confidence,
+                    "hallucination": message.hallucination
                 })
             return {
                 "message": "Messages retrieved successfully",

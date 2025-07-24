@@ -5,10 +5,11 @@ from datetime import datetime
 from typing import Optional
 from src.db.database import get_session
 from src.db.models import Document
+import os
 
 router = APIRouter()
 
-UPLOAD_DIR = Path("upload_files")
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "upload_files"))
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 @router.post("/")

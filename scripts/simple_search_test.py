@@ -4,6 +4,9 @@
 from qdrant_client import QdrantClient
 from typing import List, Dict
 import numpy as np
+import os
+
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 
 def mock_embed_text(text: str) -> List[float]:
     """Simple mock embedder for testing"""
@@ -28,7 +31,7 @@ def search_documents(query: str, limit: int = 5) -> List[Dict]:
     
     try:
         # Initialize client
-        client = QdrantClient("http://localhost:6333")
+        client = QdrantClient(QDRANT_URL)
         
         # Convert query to vector
         query_vector = mock_embed_text(query)
@@ -64,7 +67,7 @@ if __name__ == "__main__":
     
     # Test connection
     try:
-        client = QdrantClient("http://localhost:6333")
+        client = QdrantClient(QDRANT_URL)
         collections = client.get_collections()
         print(f"Connected to Qdrant. Collections: {[c.name for c in collections.collections]}")
     except Exception as e:

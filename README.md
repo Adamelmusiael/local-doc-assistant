@@ -1,24 +1,23 @@
 # AI-Assistant
 
-Aby uruchomić testową apke należy:
+To run the test app:
 ## 1. Clone repo
 `bash  git clone https://github.com/adammussial/AI-Assistant.git`
 
-## 2.Stwórz oraz aktywuj conda env
-do wypełnienia
+## 2. Create and activate conda env
+TBD
 
-## 3. uruchom apke:uvicorn src.app.main:app --reload
+## 3. Run the app: uvicorn src.app.main:app --reload
 `bash uvicorn src.app.main:app --reload`
 
-## 4. apka powinna się odpalić na:
+## 4. The app should be available at:
 http://127.0.0.1:8000
 
-
-Po uruchomieniu BE można odpalić streamlit (tymczasowy frontend na potrzeby mvp).
-UWAGA! Bez BE front nie ruszy - musza być spełnione wszytkie poprzednie kroki.
-# 1. Uruchom frontend:
+After starting the backend, you can run Streamlit (temporary frontend for MVP purposes).
+NOTE! The frontend will not work without the backend - all previous steps must be completed.
+# 1. Start the frontend:
 `bash streamlit run frontend/streamlit_app.py`
-# 2. dostęp powinien być prze:
+# 2. The app should be available at:
 
 Local URL: http://localhost:8501
 Network URL: http://192.168.0.3:8501
