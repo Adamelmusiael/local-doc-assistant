@@ -26,7 +26,6 @@ except ImportError:
         
     except ImportError:
         embed_text = mock_embed_text
-        
 
 # Initialize Qdrant client
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")

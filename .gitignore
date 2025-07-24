@@ -6,6 +6,7 @@ __pycache__/
 .vscode/
 .cache/
 *.db
+# Ignore all pdf files
 *.pdf
 # Except those that are ment for testing
 !temp/test_files/*.pdf
