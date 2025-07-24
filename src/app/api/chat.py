@@ -25,6 +25,7 @@ router = APIRouter()
 
 LLM_API_URL = os.getenv("LLM_API_URL", "http://localhost:11434/api/generate")
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", Path(__file__).parent.parent.parent.parent / "upload_files"))
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "mistral")
 
 class CreateChatSessionRequest(BaseModel):
     title: str
@@ -185,10 +186,11 @@ async def create_chat_session(request: CreateChatSessionRequest):
     try:
         llm_model = request.llm_model.strip() if request.llm_model else ""
         if llm_model == 'string':
-            llm_model = "mistral"
+            llm_model = DEFAULT_MODEL
 
         if not llm_model:
-            llm_model = "mistral"
+            llm_model = DEFAULT_MODEL
+
         with get_session() as session:
             chat_session = ChatSession(
                 title=request.title,
