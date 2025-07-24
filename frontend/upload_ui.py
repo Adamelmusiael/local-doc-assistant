@@ -1,5 +1,8 @@
 import streamlit as st
 import requests
+import os
+
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 def render_upload_ui():
     st.title("Upload PDF Document")
@@ -24,7 +27,7 @@ def render_upload_ui():
                     "department": department,
                     "client": client}
             
-            response = requests.post("http://localhost:8000/upload", files=files, data=data)
+            response = requests.post(f"{API_BASE_URL}/upload", files=files, data=data)
 
             if response.status_code == 200:
                 st.success("File uploaded successfully!")

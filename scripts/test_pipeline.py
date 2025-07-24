@@ -11,6 +11,7 @@ Usage:
 
 import sys
 from pathlib import Path
+import os
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
@@ -21,11 +22,15 @@ import random
 from file_ingestion.preprocessor import preprocess_document_to_chunks
 from vectorstore.qdrant_search import search_documents
 from vectorstore.embedder import embed_text
+from qdrant_client import QdrantClient
+
+TEST_DOCS_DIR = os.getenv("TEST_DOCS_DIR", str(Path(__file__).parent.parent / "temp" / "test_docs"))
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 
 def run_test():
     
     # Get documents, paths etc.
-    test_docs_dir = Path(__file__).parent.parent / "temp" / "test_docs"
+    test_docs_dir = Path(TEST_DOCS_DIR)
     if not test_docs_dir.exists():
         print(f"Test documents directory does not exist: {test_docs_dir}")
         return False
@@ -45,7 +50,7 @@ def run_test():
         print("Collection setup successfully")
     except Exception as e:
         print(f"Failed to setup collection: {e}")
-        print("💡 SOLUTION: Start Qdrant server with: docker run -p 6333:6333 qdrant/qdrant")
+        print("SOLUTION: Start Qdrant server with: docker run -p 6333:6333 qdrant/qdrant")
         print("   Or install Qdrant locally and start it on port 6333")
         return False
     # Step 2: Preprocess documents to chunks
@@ -107,6 +112,7 @@ def run_test():
     
     # Step 5: Cleanup - delete test collection if needed
     try:
+        client = QdrantClient(QDRANT_URL)
         client.delete_collection("test_documents")
         print("Test collection deleted successfully")
     except Exception as e:

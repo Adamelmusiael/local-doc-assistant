@@ -4,7 +4,7 @@ from documents_ui import render_documents_ui
 from chat_ui import render_chat_ui
 
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Select a page:", ["Upload", "Documents"])
+page = st.sidebar.radio("Select a page:", ["Upload", "Documents", "Chat"])
 
 if page == "Upload":
     render_upload_ui()

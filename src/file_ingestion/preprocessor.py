@@ -24,7 +24,7 @@ def preprocess_document_to_chunks(
         List[Dict]: List of chunks with text, chunk_index, and metadata fields
     """
     raw_text = extract_text_from_pdf(pdf_path)
-    chunks = chunk_text(raw_text,chunk_size=500, chunk_overlap=50)
+    chunks = chunk_text(raw_text, chunk_size=500, chunk_overlap=50)
 
     structured_chunks = []
     for i, chunk in enumerate(chunks):

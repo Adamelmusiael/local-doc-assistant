@@ -2,6 +2,9 @@ __pycache__/
 *.pyc
 .env
 .env.*
+# Ignore all env files but the example
+!.env.example
+
 .idea/
 .vscode/
 .cache/
