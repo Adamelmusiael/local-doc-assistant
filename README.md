@@ -17,12 +17,8 @@ After starting the backend, you can run Streamlit (temporary frontend for MVP pu
 NOTE! The frontend will not work without the backend - all previous steps must be completed.
 # 1. Start the frontend:
 `bash streamlit run frontend/streamlit_app.py`
-# 2. The app should be available at:
 
-## Pliki i konfiguracja
-- `docker-compose.yml` – definiuje wszystkie usługi
-- `Dockerfile` – backend (FastAPI)
-- `Dockerfile.frontend` – frontend (Streamlit)
-- `requirements.txt` – zależności Pythona
-- `.env` – klucze i zmienne środowiskowe (stwórz na podstawie `.env.example`)
+2. The app should be available at:
+Local URL: http://localhost:8501 Network URL: http://192.168.0.3:8501
 
+Activate Qdrant before using the app: bash docker run -p 6333:6333 qdrant/qdrant
