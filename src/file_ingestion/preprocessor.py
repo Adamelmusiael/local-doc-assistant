@@ -6,8 +6,8 @@ try:
     from .chunker import chunk_text
 except ImportError:
     # For standalone testing
-    from extractor import extract_text_from_pdf
-    from chunker import chunk_text
+    from .extractor import extract_text_from_pdf
+    from .chunker import chunk_text
 
 def preprocess_document_to_chunks(
     pdf_path: str,

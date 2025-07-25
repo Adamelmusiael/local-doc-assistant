@@ -4,9 +4,11 @@ from .embedder import embed_text
 from typing import List
 import uuid
 import os
-
+import time
+from qdrant_client.http.exceptions import ResponseHandlingException
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 client = QdrantClient(QDRANT_URL)
+
 
 def setup_collection(collection_name: str = "documents"):
     """Setup Qdrant collection with necessary parameters. 
@@ -51,3 +53,15 @@ def ensure_collection(collection_name: str = "documents"):
             vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
         )
         print(f"Qdrant collection '{collection_name}' has been created.")
+
+
+def ensure_collection_with_retry(max_retries=10, delay=3):
+    for attempt in range(max_retries):
+        try:
+            ensure_collection()  # your existing function
+            print("Qdrant is ready!")
+            return
+        except ResponseHandlingException as e:
+            print(f"Qdrant not ready, retrying in {delay}s... ({attempt+1}/{max_retries})")
+            time.sleep(delay)
+    raise Exception("Qdrant did not become ready in time.")
