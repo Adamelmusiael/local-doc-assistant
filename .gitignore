@@ -2,10 +2,14 @@ __pycache__/
 *.pyc
 .env
 .env.*
+# Ignore all env files but the example
+!.env.example
+
 .idea/
 .vscode/
 .cache/
 *.db
+# Ignore all pdf files
 *.pdf
 # Except those that are ment for testing
 !temp/test_files/*.pdf

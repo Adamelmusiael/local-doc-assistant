@@ -1,26 +1,23 @@
 # AI-Assistant
 
-## Szybki start – uruchomienie jednym poleceniem (Windows/Mac/Linux)
+To run the test app:
+## 1. Clone repo
+`bash  git clone https://github.com/adammussial/AI-Assistant.git`
 
-1. Zainstaluj [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac)
-2. Skopiuj plik `.env.example` do `.env` i uzupełnij klucz OpenAI oraz inne wymagane zmienne
-3. W katalogu projektu uruchom:
-   ```
-   docker-compose up --build
-   ```
-4. Backend: http://localhost:8000  
-   Frontend: http://localhost:8501
+## 2. Create and activate conda env
+TBD
 
-**To wszystko!**
+## 3. Run the app: uvicorn src.app.main:app --reload
+`bash uvicorn src.app.main:app --reload`
 
----
+## 4. The app should be available at:
+http://127.0.0.1:8000
 
-### Szczegóły
-- Wszystkie usługi (backend, frontend, Qdrant) uruchamiają się automatycznie.
-- Nie musisz instalować Pythona, Qdrant, Streamlit itp. – wszystko działa w kontenerach.
-- Możesz zatrzymać aplikację poleceniem `docker-compose down`.
-
----
+After starting the backend, you can run Streamlit (temporary frontend for MVP purposes).
+NOTE! The frontend will not work without the backend - all previous steps must be completed.
+# 1. Start the frontend:
+`bash streamlit run frontend/streamlit_app.py`
+# 2. The app should be available at:
 
 ## Pliki i konfiguracja
 - `docker-compose.yml` – definiuje wszystkie usługi
@@ -29,7 +26,3 @@
 - `requirements.txt` – zależności Pythona
 - `.env` – klucze i zmienne środowiskowe (stwórz na podstawie `.env.example`)
 
----
-
-## Dla zaawansowanych
-Możesz nadal uruchamiać backend i frontend ręcznie, ale Docker Compose jest najprostszy i najbardziej uniwersalny.

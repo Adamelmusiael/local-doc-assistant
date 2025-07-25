@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
+import os
 
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 def render_chat_ui():
     st.title("Chat with your documents!")
@@ -20,29 +21,25 @@ def select_document_for_preprocessing():
         documents = requests.get(f"{API_BASE_URL}/docs/")
         if documents.status_code == 200:
             documents = documents.json()
-            # st.write(documents["documents"][0])
-            # st.write(documents["documents"][1])
-            # st.write(documents["documents"][0]["filename"])
             num_of_docs = len(documents["documents"])
             documents_available = []
-            for i in range(num_of_docs):
-                documents_available.append(documents["documents"][i]["filename"])
-                #st.write(documents["documents"][i]["filename"])
+            for index in range(num_of_docs):
+                documents_available.append(documents["documents"][index]["filename"])
             
             selected_files = st.multiselect("Select documents", documents_available)
             
-            # Dodaj przycisk do preprocessingu wybranych dokumentów
+            # Add a button to preprocess selected documents
             if selected_files:
                 if st.button("Preprocess Selected Documents"):
                     st.info(f"Processing {len(selected_files)} document(s)...")
                     
                     try:
-                        # Przygotuj dane do wysłania
+                        # Prepare data to send
                         preprocessing_data = {
                             "filenames": selected_files
                         }
                         
-                        # Wyślij żądanie do endpointu preprocessingu
+                        # Send request to preprocessing endpoint
                         response = requests.post(
                             f"{API_BASE_URL}/docs/preprocess",
                             json=preprocessing_data
@@ -52,14 +49,14 @@ def select_document_for_preprocessing():
                             result = response.json()
                             st.success("Preprocessing completed successfully!")
                             
-                            # Wyświetl szczegóły wyniku
+                            # Display result details
                             if "preprocessed" in result:
                                 for doc_result in result["preprocessed"]:
                                     st.write(f"📄 **{doc_result['filename']}**: {doc_result['chunks_added']} chunks added")
                                     if "metadata" in doc_result:
                                         st.write(f"   Metadata: {doc_result['metadata']}")
                         else:
-                            # Obsługa błędów HTTP
+                            # Handle HTTP errors
                             error_detail = response.json() if response.headers.get('content-type', '').startswith('application/json') else response.text
                             st.error(f"Preprocessing failed with status code: {response.status_code}")
                             st.error(f"Error details: {error_detail}")

@@ -4,13 +4,17 @@ from src.db.models import Document
 from sqlmodel import select
 from pathlib import Path
 from pydantic import BaseModel
-from vectorstore.qdrant_indexer import index_chunks
-from file_ingestion.preprocessor import preprocess_document_to_chunks
+from src.vectorstore.qdrant_indexer import index_chunks
+from src.file_ingestion.preprocessor import preprocess_document_to_chunks
 from sqlalchemy import func
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance
+import os
 
 router = APIRouter()
+
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "upload_files"))
 
 @router.get("/")
 async def list_documents():
@@ -116,7 +120,7 @@ def delete_all_documents_and_chunks():
             session.exec(Document.__table__.delete())
             session.commit()
         # Usuń wszystkie wektory z Qdrant
-        client = QdrantClient("http://localhost:6333")
+        client = QdrantClient(QDRANT_URL)
         client.recreate_collection(
             collection_name="documents",
             vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
@@ -164,7 +168,7 @@ async def delete_document(document_id: int):
 def delete_chunks_by_document_id(document_id: int):
     """Delete all chunks/vectors in Qdrant for a given document_id."""
     try:
-        client = QdrantClient("http://localhost:6333")
+        client = QdrantClient(QDRANT_URL)
         # Usuwamy wszystkie punkty, gdzie payload.document_id == document_id
         client.delete(
             collection_name="documents",
@@ -185,7 +189,6 @@ class PreprocessRequest(BaseModel):
 @router.post("/preprocess")
 def preprocess_documents(request: PreprocessRequest):
     """Preprocess selected documents and add them to Qdrant index."""
-    UPLOAD_DIR = Path("upload_files")
     results = []
     try:
         for filename in request.filenames:

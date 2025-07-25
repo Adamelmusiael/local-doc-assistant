@@ -6,7 +6,7 @@ from vectorstore.qdrant_search import search_documents
 from db.models import Document
 import os
 import openai
-
+LLM_API_URL = os.getenv("LLM_API_URL", "http://localhost:11434/api/generate")
 
 
 def get_chat_history(session_id):
@@ -23,10 +23,10 @@ def generate_response(prompt, model="mistral"):
         )
         print("model openai", model)
         return response.choices[0].message.content
-    # Lokalny model (np. Mistral)
+    # Local model (e.g. Mistral)
     try:
         response = requests.post(
-            "http://localhost:11434/api/generate",
+            LLM_API_URL,
             json={"model": model, "prompt": prompt, "stream": False}
         )
         if response.status_code != 200:
@@ -38,7 +38,7 @@ def generate_response(prompt, model="mistral"):
         return f"[Model error: {str(e)}]"
 
 def extract_sources(answer, chunks):
-    # Prosta heurystyka: zwróć id dokumentów chunków, jeśli są dostępne
+    # Simple heuristic: return document IDs of chunks if available
     sources = set()
     for chunk in chunks:
         if isinstance(chunk, dict):
@@ -48,11 +48,11 @@ def extract_sources(answer, chunks):
     return list(sources)
 
 def score_confidence(answer, chunks):
-    # TODO: oblicz confidence score
+    # TODO: calculate confidence score
     return None
 
 def score_hallucination(answer, chunks):
-    # TODO: oblicz hallucination score
+    # TODO: calculate hallucination score
     return None
 
 def store_chat_message(session_id, role, content, sources=None, confidence=None, hallucination=None):
@@ -63,23 +63,23 @@ def store_chat_message(session_id, role, content, sources=None, confidence=None,
     }
     _store_chat_message(session_id, role, content, metadata=metadata)
 
-OPENAI_MODELS = {"gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"}
+OPENAI_MODELS = {"gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano"}
 
-ALLOWED_MODELS = ["mistral", "chatgpt", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
+ALLOWED_MODELS = ["mistral", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano"]
 
 def handle_chat_message(session_id, user_question, model="mistral"):
-    # Walidacja modelu
-    if model.lower() not in [m.lower() for m in ALLOWED_MODELS]:
+    # Model validation
+    if model.lower() not in [model.lower() for model in ALLOWED_MODELS]:
         raise ValueError(f"Model '{model}' is not supported. Please choose one of: {ALLOWED_MODELS}")
-    # 1. Pobierz historię
+    # 1. Get history
     chat_history = get_chat_history(session_id)
-    # 2. Pobierz chunki
+    # 2. Get chunks
     top_chunks = search_documents(user_question, limit=5)
     # 3. build_prompt
     prompt = build_prompt(top_chunks, chat_history, user_question)
-    # --- ZAPISZ PYTANIE USERA ---
+    # --- SAVE USER QUESTION ---
     store_chat_message(session_id, role="user", content=user_question)
-    # 4. generate_response (obsługuje OpenAI i lokalny)
+    # 4. generate_response (handles OpenAI and local)
     answer = generate_response(prompt, model=model)
     # 5. extract_sources
     sources = extract_sources(answer, top_chunks)
@@ -87,9 +87,9 @@ def handle_chat_message(session_id, user_question, model="mistral"):
     confidence = None
     # 7. score_hallucination (placeholder)
     hallucination = None
-    # 8. store_chat_message (asystent)
+    # 8. store_chat_message (assistant)
     store_chat_message(session_id, role="assistant", content=answer, sources=sources, confidence=confidence, hallucination=hallucination)
-    # 9. Zwróć json
+    # 9. Return json
     return {
         "answer": answer,
         "model": model,

@@ -2,6 +2,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from typing import List, Dict, Optional
 import uuid
+import os
 
 # Mock embedder function for testing when real embedder is not available
 def mock_embed_text(text: str) -> List[float]:
@@ -25,12 +26,13 @@ except ImportError:
         
     except ImportError:
         embed_text = mock_embed_text
-        
 
 # Initialize Qdrant client
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+
 def get_client():
     """Get Qdrant client instance"""
-    return QdrantClient("http://localhost:6333")
+    return QdrantClient(QDRANT_URL)
 
 def search_documents(query: str, collection_name="documents", limit: int = 5) -> List[Dict]:
     """
