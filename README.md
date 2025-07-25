@@ -1,24 +1,56 @@
 # AI-Assistant
 
-To run the test app:
-## 1. Clone repo
-`bash  git clone https://github.com/adammussial/AI-Assistant.git`
+##  Quickstart (Recommended: Docker)
 
-## 2. Create and activate conda env
-TBD
+1. **Install Docker Desktop**  
+   - [Windows instructions](https://docs.docker.com/desktop/install/windows-install/)
+   - [Mac instructions](https://docs.docker.com/desktop/install/mac-install/)
 
-## 3. Run the app: uvicorn src.app.main:app --reload
-`bash uvicorn src.app.main:app --reload`
+2. **Clone the repository**
+   ```sh
+   git clone https://github.com/adammussial/AI-Assistant.git
+   cd AI-Assistant
+   ```
 
-## 4. The app should be available at:
-http://127.0.0.1:8000
+3. **Start the app (backend, Qdrant, frontend)**
+   ```sh
+   docker-compose up --build
+   ```
 
-After starting the backend, you can run Streamlit (temporary frontend for MVP purposes).
-NOTE! The frontend will not work without the backend - all previous steps must be completed.
-# 1. Start the frontend:
-`bash streamlit run frontend/streamlit_app.py`
+4. **Access the app:**
+   - Backend API: [http://localhost:8000](http://localhost:8000)
 
-2. The app should be available at:
-Local URL: http://localhost:8501 Network URL: http://192.168.0.3:8501
+---
 
-Activate Qdrant before using the app: bash docker run -p 6333:6333 qdrant/qdrant
+##  For Developers (Local Setup, Optional)
+
+If you want to run locally:
+
+- Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Python 3.10+
+- Create environment:
+  ```sh
+  conda env create -f environment.yml
+  conda activate mvp-ai-assistant
+  ```
+  or
+  ```sh
+  python -m venv venv
+  source venv/bin/activate  # or venv\Scripts\activate on Windows
+  pip install -r requirements.txt
+  ```
+- Start Qdrant:
+  ```sh
+  docker run -p 6333:6333 qdrant/qdrant
+  ```
+- Run backend:
+  ```sh
+  uvicorn src.app.main:app --reload
+  ```
+---
+
+**Summary:**  
+- For 99% of users, just run:  
+  ```sh
+  docker-compose up --build
+  ```
+- No need to worry about Conda or pip unless you want to develop locally.
