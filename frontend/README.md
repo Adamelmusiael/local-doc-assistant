@@ -36,10 +36,12 @@ The application will be available at `http://localhost:3000`
 
 - **React 18** - UI library
 - **TypeScript** - Type safety
+- **React Router** - Client-side routing and navigation
 - **Vite** - Build tool and dev server
 - **Tailwind CSS** - Utility-first CSS framework
 - **Lucide React** - Icons
 - **Axios** - HTTP client
+- **Prettier** - Code formatting
 
 ### API Integration
 
