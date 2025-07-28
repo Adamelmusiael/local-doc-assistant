@@ -1,0 +1,14 @@
+.sidebar {
+  width: 350px;
+  padding: 10px;
+
+  &__header {
+    height: 50px;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
