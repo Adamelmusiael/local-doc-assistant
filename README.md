@@ -8,7 +8,7 @@
 
 2. **Clone the repository**
    ```sh
-   git clone https://github.com/adammussial/AI-Assistant.git
+   git clone https://github.com/thenorthalliance/local-rag.git
    cd AI-Assistant
    ```
 
