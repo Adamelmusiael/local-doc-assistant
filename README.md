@@ -16,8 +16,8 @@
 
 2. **Clone the repository**
    ```sh
-   git clone https://github.com/adammussial/AI-Assistant.git
-   cd AI-Assistant
+   git clone https://github.com/thenorthalliance/local-rag.git
+   cd local-rag
    ```
 
 3. **Start the app (backend, Qdrant, frontend)**
