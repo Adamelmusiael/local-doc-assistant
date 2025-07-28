@@ -1,4 +1,12 @@
-# AI-Assistant
+# AI Assistant
+
+
+## Features
+- Upload and manage PDF documents with metadata
+- Preprocess and index documents for semantic search
+- Chat with an LLM (Mistral, OpenAI, etc.) using document context
+- Session-based chat with conversation history
+- FastAPI backend, Qdrant vector search, SQLite for metadata
 
 ##  Quickstart (Recommended: Docker)
 
@@ -48,9 +56,8 @@ If you want to run locally:
   ```
 ---
 
-**Summary:**  
-- For 99% of users, just run:  
-  ```sh
-  docker-compose up --build
-  ```
-- No need to worry about Conda or pip unless you want to develop locally.
+## Documentation
+- [Architecture & Structure](docs/ARCHITECTURE.md)
+- [Technologies](docs/TECHNOLOGIES.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [API Documentation](docs/API_DOCUMENTATION.md)
