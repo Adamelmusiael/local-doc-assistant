@@ -81,32 +81,36 @@ def search_documents(query: str, collection_name="documents", limit: int = 5) ->
         return results
         
     except Exception as e:
-        print(f" Search error: {e}")
+        print(f"Search error: {e}")
         return []
 
-def search_with_filters(query: str, limit: int = 5, filters: Optional[Dict[str, str]] = None) -> List[Dict]:
+def search_with_filters(
+    query: str, 
+    limit: int = 5, 
+    filters: Optional[Dict[str, str]] = None,
+    document_ids: Optional[List[int]] = None
+) -> List[Dict]:
     """
-    Advanced search function with metadata filtering.
+    Advanced search function with metadata filtering and document ID filtering.
     
     Args:
         query (str): Search query text
         limit (int): Maximum number of results to return
         filters (Dict): Optional filters for metadata (e.g., {"department": "HR"})
+        document_ids (List[int]): Optional list of document IDs to search in
     
     Returns:
         List[Dict]: Filtered search results
     """
     try:
-        # Convert query text to vector
         query_vector = embed_text(query)
-        
-        # Get client instance
         client = get_client()
         
-        # Create filter conditions if provided
-        query_filter = None
+        # Build filter conditions
+        conditions = []
+        
+        # Add metadata filters (existing functionality)
         if filters:
-            conditions = []
             for key, value in filters.items():
                 conditions.append(
                     FieldCondition(
@@ -114,9 +118,90 @@ def search_with_filters(query: str, limit: int = 5, filters: Optional[Dict[str, 
                         match=MatchValue(value=value)
                     )
                 )
-            query_filter = Filter(must=conditions)
         
-        # Search in Qdrant with filters
+        # Add document ID filter (new functionality)
+        if document_ids:
+            doc_conditions = []
+            for doc_id in document_ids:
+                doc_conditions.append(
+                    FieldCondition(
+                        key="document_id",
+                        match=MatchValue(value=doc_id)
+                    )
+                )
+            # If we have both metadata filters AND document IDs
+            if conditions:
+                # Metadata filters must match AND document must be in selected list
+                conditions.append(Filter(should=doc_conditions))
+            else:
+                # Only document ID filtering
+                conditions = [Filter(should=doc_conditions)]
+        
+        # Create final filter
+        query_filter = None
+        if conditions:
+            if len(conditions) == 1:
+                query_filter = conditions[0]
+            else:
+                query_filter = Filter(must=conditions)
+        
+        # Search in Qdrant
+        search_result = client.search(
+            collection_name="documents",
+            query_vector=query_vector,
+            query_filter=query_filter,
+            limit=limit
+        )
+        
+        # Format results (same as before)
+        results = []
+        for hit in search_result:
+            result = {
+                "id": hit.id,
+                "score": float(hit.score),
+                "text": hit.payload.get("text", ""),
+                "metadata": {
+                    "filename": hit.payload.get("filename", ""),
+                    "document_id": hit.payload.get("document_id", ""),
+                    "chunk_index": hit.payload.get("chunk_index", 0),
+                    "confidentiality": hit.payload.get("confidentiality", ""),
+                    "department": hit.payload.get("department", ""),
+                    "client": hit.payload.get("client", "")
+                }
+            }
+            results.append(result)
+        
+        return results
+        
+    except Exception as e:
+        print(f"Filtered search error: {e}")
+        return []
+
+def search_documents_by_ids(
+    query: str, 
+    document_ids: List[int],
+    limit: int = 5
+) -> List[Dict]:
+    """
+    Search only within specified document IDs using semantic similarity.
+    """
+    try:
+        query_vector = embed_text(query)
+        client = get_client()
+        
+        # Create filter for document IDs
+        doc_conditions = []
+        for doc_id in document_ids:
+            doc_conditions.append(
+                FieldCondition(
+                    key="document_id",
+                    match=MatchValue(value=doc_id)
+                )
+            )
+        
+        query_filter = Filter(should=doc_conditions)
+        
+        # Search in Qdrant with document filter
         search_result = client.search(
             collection_name="documents",
             query_vector=query_vector,
@@ -145,7 +230,7 @@ def search_with_filters(query: str, limit: int = 5, filters: Optional[Dict[str, 
         return results
         
     except Exception as e:
-        print(f"Filtered search error: {e}")
+        print(f"Document ID search error: {e}")
         return []
 
 def get_collection_info() -> Dict:
