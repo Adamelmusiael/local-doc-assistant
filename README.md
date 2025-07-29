@@ -1,26 +1,63 @@
-# AI-Assistant
+# AI Assistant
 
-To run the test app:
-## 1. Clone repo
-`bash  git clone https://github.com/adammussial/AI-Assistant.git`
 
-## 2. Create and activate conda env
-TBD
+## Features
+- Upload and manage PDF documents with metadata
+- Preprocess and index documents for semantic search
+- Chat with an LLM (Mistral, OpenAI, etc.) using document context
+- Session-based chat with conversation history
+- FastAPI backend, Qdrant vector search, SQLite for metadata
 
-## 3. Run the app: uvicorn src.app.main:app --reload
-`bash uvicorn src.app.main:app --reload`
+##  Quickstart (Recommended: Docker)
 
-## 4. The app should be available at:
-http://127.0.0.1:8000
+1. **Install Docker Desktop**  
+   - [Windows instructions](https://docs.docker.com/desktop/install/windows-install/)
+   - [Mac instructions](https://docs.docker.com/desktop/install/mac-install/)
 
-After starting the backend, you can run Streamlit (temporary frontend for MVP purposes).
-NOTE! The frontend will not work without the backend - all previous steps must be completed.
-# 1. Start the frontend:
-`bash streamlit run frontend/streamlit_app.py`
-# 2. The app should be available at:
+2. **Clone the repository**
+   ```sh
+   git clone https://github.com/thenorthalliance/local-rag.git
+   cd local-rag
+   ```
 
-Local URL: http://localhost:8501
-Network URL: http://192.168.0.3:8501
+3. **Start the app (backend, Qdrant, frontend)**
+   ```sh
+   docker-compose up --build
+   ```
 
-Activate Qdrant before using the app:
-`bash docker run -p 6333:6333 qdrant/qdrant`
+4. **Access the app:**
+   - Backend API: [http://localhost:8000](http://localhost:8000)
+
+---
+
+##  For Developers (Local Setup, Optional)
+
+If you want to run locally:
+
+- Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Python 3.10+
+- Create environment:
+  ```sh
+  conda env create -f environment.yml
+  conda activate mvp-ai-assistant
+  ```
+  or
+  ```sh
+  python -m venv venv
+  source venv/bin/activate  # or venv\Scripts\activate on Windows
+  pip install -r requirements.txt
+  ```
+- Start Qdrant:
+  ```sh
+  docker run -p 6333:6333 qdrant/qdrant
+  ```
+- Run backend:
+  ```sh
+  uvicorn src.app.main:app --reload
+  ```
+---
+
+## Documentation
+- [Architecture & Structure](docs/ARCHITECTURE.md)
+- [Technologies](docs/TECHNOLOGIES.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [API Documentation](docs/API_DOCUMENTATION.md)

@@ -8,5 +8,21 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-assistant-backend
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - qdrant
+    volumes:
+      - ./upload_files:/app/upload_files
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+
 volumes:
   qdrant_data:
