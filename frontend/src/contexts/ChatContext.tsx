@@ -29,7 +29,55 @@ type ChatAction =
 
 // Initial state
 const initialState: ChatState = {
-  chats: [],
+  chats: [
+    {
+      id: '1',
+      title: 'Project Discussion',
+      messages: [
+        {
+          id: '1',
+          content: 'Hello! I need help with my React project.',
+          role: 'user',
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+        },
+        {
+          id: '2',
+          content: 'I\'d be happy to help you with your React project! What specific issues are you facing?',
+          role: 'assistant',
+          timestamp: new Date(Date.now() - 3500000).toISOString(),
+        }
+      ],
+      model: 'mistral',
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      updatedAt: new Date(Date.now() - 3500000).toISOString(),
+      isActive: true,
+    },
+    {
+      id: '2',
+      title: 'Code Review',
+      messages: [
+        {
+          id: '3',
+          content: 'Can you review this TypeScript code?',
+          role: 'user',
+          timestamp: new Date(Date.now() - 7200000).toISOString(),
+        }
+      ],
+      model: 'gpt-4',
+      createdAt: new Date(Date.now() - 7200000).toISOString(),
+      updatedAt: new Date(Date.now() - 7200000).toISOString(),
+      isActive: true,
+    },
+    {
+      id: '3',
+      title: 'API Integration',
+      messages: [],
+      model: 'claude',
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 86400000).toISOString(),
+      isActive: true,
+    }
+  ],
   currentChat: null,
   isLoading: false,
   error: null,
@@ -162,6 +210,7 @@ interface ChatContextType {
   sendMessage: (content: string) => void;
   updateMessage: (messageId: string, content: string) => void;
   deleteChat: (chatId: string) => void;
+  updateChat: (chatId: string, updates: Partial<Chat>) => void;
   setSearchMode: (mode: SearchMode) => void;
   addSelectedFile: (fileId: string) => void;
   removeSelectedFile: (fileId: string) => void;
@@ -249,6 +298,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     dispatch({ type: 'DELETE_CHAT', payload: chatId });
   };
 
+  const updateChat = (chatId: string, updates: Partial<Chat>) => {
+    const chat = state.chats.find(c => c.id === chatId);
+    if (chat) {
+      const updatedChat = { ...chat, ...updates, updatedAt: new Date().toISOString() };
+      dispatch({ type: 'UPDATE_CHAT', payload: updatedChat });
+    }
+  };
+
   const setSearchMode = (mode: SearchMode) => {
     dispatch({ type: 'SET_SEARCH_MODE', payload: mode });
   };
@@ -273,6 +330,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     sendMessage,
     updateMessage,
     deleteChat,
+    updateChat,
     setSearchMode,
     addSelectedFile,
     removeSelectedFile,

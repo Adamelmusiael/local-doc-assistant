@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useChat } from '../../contexts/ChatContext';
 import { useUser } from '../../contexts/UserContext';
+import ChatSession from './ChatSession';
 import './sidebar.scss';
 
 // Icons (you can replace these with actual icon components)
@@ -151,30 +152,14 @@ const Sidebar: React.FC = () => {
               </div>
             ) : (
               chatState.chats.map((chat) => (
-                <div
+                <ChatSession
                   key={chat.id}
-                  className={`sidebar__chat-item ${
-                    chatState.currentChat?.id === chat.id ? 'active' : ''
-                  }`}
-                  onClick={() => handleChatSelect(chat.id)}
-                >
-                  <div className="sidebar__chat-info">
-                    <h4 className="sidebar__chat-title">
-                      {truncateTitle(chat.title)}
-                    </h4>
-                    <p className="sidebar__chat-date">
-                      {formatDate(chat.updatedAt)}
-                    </p>
-                  </div>
-                  <div className="sidebar__chat-meta">
-                    <span className="sidebar__chat-model">{chat.model}</span>
-                    {chat.messages.length > 0 && (
-                      <span className="sidebar__chat-messages">
-                        {chat.messages.length} messages
-                      </span>
-                    )}
-                  </div>
-                </div>
+                  chat={chat}
+                  isActive={chatState.currentChat?.id === chat.id}
+                  onSelect={handleChatSelect}
+                  formatDate={formatDate}
+                  truncateTitle={truncateTitle}
+                />
               ))
             )}
           </div>
@@ -204,8 +189,8 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
         
-        {showUserMenu && (
-          <div className="sidebar__user-menu">
+                {showUserMenu && (
+          <div className="sidebar__user-menu show">
             <button 
               className="sidebar__user-menu-item"
               onClick={() => {
