@@ -49,7 +49,7 @@ const UserIcon = () => (
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { state: chatState, createChat, selectChat } = useChat();
+  const { state: chatState, createChat, selectChat, deleteChat, updateChat } = useChat();
   const { state: userState, logout } = useUser();
   
   const [isChatsExpanded, setIsChatsExpanded] = useState(true);
@@ -67,20 +67,12 @@ const Sidebar: React.FC = () => {
     navigate('/');
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return 'Today';
-    if (diffDays === 2) return 'Yesterday';
-    if (diffDays <= 7) return `${diffDays - 1} days ago`;
-    return date.toLocaleDateString();
+  const handleChatRename = (chatId: string, newTitle: string) => {
+    updateChat(chatId, { title: newTitle });
   };
 
-  const truncateTitle = (title: string, maxLength: number = 30) => {
-    return title.length > maxLength ? title.substring(0, maxLength) + '...' : title;
+  const handleChatDelete = (chatId: string) => {
+    deleteChat(chatId);
   };
 
   return (
@@ -96,7 +88,7 @@ const Sidebar: React.FC = () => {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="sidebar__navigation">
+      <nav className="sidebar__nav">
         <Link 
           to="/" 
           className={`sidebar__nav-item ${location.pathname === '/' ? 'active' : ''}`}
@@ -139,8 +131,10 @@ const Sidebar: React.FC = () => {
           className="sidebar__chats-header"
           onClick={() => setIsChatsExpanded(!isChatsExpanded)}
         >
-          <span>Chat History</span>
-          <ChevronDownIcon className={`sidebar__chevron ${isChatsExpanded ? 'expanded' : ''}`} />
+          <span className="sidebar__chats-title">Chat History</span>
+          <button className={`sidebar__chats-toggle ${isChatsExpanded ? 'expanded' : ''}`}>
+            <ChevronDownIcon />
+          </button>
         </div>
         
         {isChatsExpanded && (
@@ -157,8 +151,8 @@ const Sidebar: React.FC = () => {
                   chat={chat}
                   isActive={chatState.currentChat?.id === chat.id}
                   onSelect={handleChatSelect}
-                  formatDate={formatDate}
-                  truncateTitle={truncateTitle}
+                  onRename={handleChatRename}
+                  onDelete={handleChatDelete}
                 />
               ))
             )}
@@ -189,8 +183,8 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
         
-                {showUserMenu && (
-          <div className="sidebar__user-menu show">
+        {showUserMenu && (
+          <div className="sidebar__user-menu">
             <button 
               className="sidebar__user-menu-item"
               onClick={() => {

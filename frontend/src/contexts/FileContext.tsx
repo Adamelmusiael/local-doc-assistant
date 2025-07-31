@@ -27,7 +27,34 @@ type FileAction =
 
 // Initial state
 const initialState: FileState = {
-  files: [],
+  files: [
+    {
+      id: 'file_1',
+      name: 'sample-document.pdf',
+      originalName: 'sample-document.pdf',
+      size: 1024000,
+      type: 'application/pdf',
+      uploadDate: '2024-01-15T10:30:00Z',
+      isPublic: true,
+      isConfidential: false,
+      processingStatus: ProcessingStatus.COMPLETED,
+      chunks: [],
+      metadata: {}
+    },
+    {
+      id: 'file_2',
+      name: 'confidential-report.pdf',
+      originalName: 'confidential-report.pdf',
+      size: 2048000,
+      type: 'application/pdf',
+      uploadDate: '2024-01-14T15:45:00Z',
+      isPublic: false,
+      isConfidential: true,
+      processingStatus: ProcessingStatus.COMPLETED,
+      chunks: [],
+      metadata: {}
+    }
+  ],
   isLoading: false,
   error: null,
   uploadProgress: {},
@@ -136,44 +163,33 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
       
-      // Simulate upload progress
-      dispatch({ 
-        type: 'SET_UPLOAD_PROGRESS', 
-        payload: { fileId: file.id, progress: 0 } 
-      });
-      
-      // TODO: Replace with actual API call
-      // const response = await fileAPI.uploadFile(file, isPublic, isConfidential);
-      
-      // Simulate processing
-      const processingFile: File = {
-        ...file,
+      // Create a new file object with proper structure
+      const newFile: File = {
+        id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: file.name,
+        originalName: file.name,
+        size: file.size,
+        type: file.type,
+        uploadDate: new Date().toISOString(),
         isPublic,
         isConfidential,
         processingStatus: ProcessingStatus.PROCESSING,
+        chunks: [],
+        metadata: {}
       };
       
-      dispatch({ type: 'ADD_FILE', payload: processingFile });
+      dispatch({ type: 'ADD_FILE', payload: newFile });
       
-      // Simulate progress updates
-      for (let i = 10; i <= 100; i += 10) {
-        setTimeout(() => {
-          dispatch({ 
-            type: 'SET_UPLOAD_PROGRESS', 
-            payload: { fileId: file.id, progress: i } 
-          });
-        }, i * 100);
-      }
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Simulate completion
-      setTimeout(() => {
-        const completedFile: File = {
-          ...processingFile,
-          processingStatus: ProcessingStatus.COMPLETED,
-        };
-        dispatch({ type: 'UPDATE_FILE', payload: completedFile });
-        dispatch({ type: 'CLEAR_UPLOAD_PROGRESS', payload: file.id });
-      }, 3000);
+      // Update to completed status
+      const completedFile: File = {
+        ...newFile,
+        processingStatus: ProcessingStatus.COMPLETED,
+      };
+      
+      dispatch({ type: 'UPDATE_FILE', payload: completedFile });
       
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Upload failed' });

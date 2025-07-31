@@ -1,9 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState } from 'react';
 import { Chat } from '../../types';
-import { useChat } from '../../contexts/ChatContext';
 
 // Icons
+const MoreIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="1"/>
+    <circle cx="19" cy="12" r="1"/>
+    <circle cx="5" cy="12" r="1"/>
+  </svg>
+);
+
 const EditIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -18,36 +24,80 @@ const DeleteIcon = () => (
   </svg>
 );
 
-const MoreIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="1"/>
-    <circle cx="19" cy="12" r="1"/>
-    <circle cx="5" cy="12" r="1"/>
-  </svg>
-);
-
 interface ChatSessionProps {
   chat: Chat;
   isActive: boolean;
   onSelect: (chatId: string) => void;
-  formatDate: (dateString: string) => string;
-  truncateTitle: (title: string, maxLength?: number) => string;
+  onRename: (chatId: string, newTitle: string) => void;
+  onDelete: (chatId: string) => void;
 }
 
 const ChatSession: React.FC<ChatSessionProps> = ({
   chat,
   isActive,
   onSelect,
-  formatDate,
-  truncateTitle,
+  onRename,
+  onDelete
 }) => {
-  const { deleteChat, updateChat } = useChat();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(chat.title);
   const [showMenu, setShowMenu] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const editInputRef = useRef<HTMLInputElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newTitle, setNewTitle] = useState(chat.title);
+
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowMenu(!showMenu);
+  };
+
+  const handleRename = () => {
+    setIsRenaming(true);
+    setShowMenu(false);
+  };
+
+  const handleSaveRename = () => {
+    if (newTitle.trim()) {
+      onRename(chat.id, newTitle.trim());
+    }
+    setIsRenaming(false);
+  };
+
+  const handleCancelRename = () => {
+    setNewTitle(chat.title);
+    setIsRenaming(false);
+  };
+
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+    setShowMenu(false);
+  };
+
+  const confirmDelete = () => {
+    onDelete(chat.id);
+    setShowDeleteModal(false);
+  };
+
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 168) { // 7 days
+      return date.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const getInitials = (title: string) => {
+    return title
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   // Get last message preview
   const lastMessage = chat.messages.length > 0 
@@ -55,165 +105,102 @@ const ChatSession: React.FC<ChatSessionProps> = ({
     : null;
 
   const lastMessagePreview = lastMessage 
-    ? truncateTitle(lastMessage.content, 50)
+    ? lastMessage.content.length > 50 
+      ? lastMessage.content.substring(0, 50) + '...'
+      : lastMessage.content
     : 'No messages yet';
 
-  // Handle click outside to close menu
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Focus edit input when editing starts
-  useEffect(() => {
-    if (isEditing && editInputRef.current) {
-      editInputRef.current.focus();
-      editInputRef.current.select();
-    }
-  }, [isEditing]);
-
-  const handleEditStart = () => {
-    setIsEditing(true);
-    setEditTitle(chat.title);
-    setShowMenu(false);
-  };
-
-  const handleEditSave = () => {
-    if (editTitle.trim() && editTitle.trim() !== chat.title) {
-      updateChat(chat.id, { title: editTitle.trim() });
-    }
-    setIsEditing(false);
-  };
-
-  const handleEditCancel = () => {
-    setIsEditing(false);
-    setEditTitle(chat.title);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleEditSave();
-    } else if (e.key === 'Escape') {
-      handleEditCancel();
-    }
-  };
-
-  const handleDelete = () => {
-    deleteChat(chat.id);
-    setShowDeleteConfirm(false);
-    setShowMenu(false);
-  };
-
-  const handleMenuToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowMenu(!showMenu);
-  };
-
   return (
-    <div
-      className={`sidebar__chat-item ${isActive ? 'active' : ''} ${showMenu ? 'menu-open' : ''}`}
-      onClick={() => onSelect(chat.id)}
-    >
-      <div className="sidebar__chat-info">
-        {isEditing ? (
-          <div className="sidebar__chat-edit">
-            <input
-              ref={editInputRef}
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              onKeyDown={handleKeyPress}
-              onBlur={handleEditSave}
-              className="sidebar__chat-edit-input"
-              maxLength={50}
-            />
-          </div>
-        ) : (
-          <>
-            <h4 className="sidebar__chat-title">
-              {truncateTitle(chat.title)}
-            </h4>
-            <p className="sidebar__chat-preview">
-              {lastMessagePreview}
-            </p>
-            <p className="sidebar__chat-date">
-              {formatDate(chat.updatedAt)}
-            </p>
-          </>
-        )}
-      </div>
-
-      <div className="sidebar__chat-meta">
-        <span className="sidebar__chat-model">{chat.model}</span>
-        {chat.messages.length > 0 && (
-          <span className="sidebar__chat-messages">
-            {chat.messages.length} messages
-          </span>
-        )}
+    <>
+      <div
+        className={`sidebar__chat-item ${isActive ? 'active' : ''} ${showMenu ? 'menu-open' : ''}`}
+        onClick={() => onSelect(chat.id)}
+      >
+        <div className="sidebar__chat-avatar">
+          {getInitials(chat.title)}
+        </div>
         
-        {!isEditing && (
-          <div className="sidebar__chat-actions" ref={menuRef}>
+        <div className="sidebar__chat-content">
+          {isRenaming ? (
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onBlur={handleSaveRename}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSaveRename();
+                } else if (e.key === 'Escape') {
+                  handleCancelRename();
+                }
+              }}
+              className="sidebar__chat-rename-input"
+              autoFocus
+            />
+          ) : (
+            <>
+              <div className="sidebar__chat-title">{chat.title}</div>
+              <div className="sidebar__chat-preview">{lastMessagePreview}</div>
+              <div className="sidebar__chat-date">{formatDate(chat.updatedAt)}</div>
+            </>
+          )}
+        </div>
+
+        <div className="sidebar__chat-actions">
+          <button
+            className="sidebar__chat-action-btn"
+            onClick={handleMenuToggle}
+            title="More options"
+          >
+            <MoreIcon />
+          </button>
+        </div>
+
+        {showMenu && (
+          <div className="sidebar__chat-menu">
             <button
-              className="sidebar__chat-action-btn"
-              onClick={handleMenuToggle}
-              title="More options"
+              className="sidebar__chat-menu-item"
+              onClick={handleRename}
             >
-              <MoreIcon />
+              <EditIcon />
+              Rename
             </button>
-            
-                        {showMenu && (
-              <div className="sidebar__chat-menu show">
-                <button
-                  className="sidebar__chat-menu-item"
-                  onClick={handleEditStart}
-                >
-                  <EditIcon />
-                  <span>Rename</span>
-                </button>
-                <button
-                  className="sidebar__chat-menu-item sidebar__chat-menu-item--delete"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  <DeleteIcon />
-                  <span>Delete</span>
-                </button>
-              </div>
-            )}
+            <button
+              className="sidebar__chat-menu-item delete"
+              onClick={handleDelete}
+            >
+              <DeleteIcon />
+              Delete
+            </button>
           </div>
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && createPortal(
+      {showDeleteModal && (
         <div className="sidebar__delete-modal">
-          <div className="sidebar__delete-modal-content">
-            <h4>Delete Chat</h4>
-            <p>Are you sure you want to delete "{chat.title}"? This action cannot be undone.</p>
-            <div className="sidebar__delete-modal-actions">
+          <div className="sidebar__delete-content">
+            <div className="sidebar__delete-title">Delete Chat</div>
+            <div className="sidebar__delete-message">
+              Are you sure you want to delete "{chat.title}"? This action cannot be undone.
+            </div>
+            <div className="sidebar__delete-actions">
               <button
-                className="sidebar__delete-modal-btn sidebar__delete-modal-btn--cancel"
-                onClick={() => setShowDeleteConfirm(false)}
+                className="sidebar__delete-btn sidebar__delete-btn--cancel"
+                onClick={() => setShowDeleteModal(false)}
               >
                 Cancel
               </button>
               <button
-                className="sidebar__delete-modal-btn sidebar__delete-modal-btn--delete"
-                onClick={handleDelete}
+                className="sidebar__delete-btn sidebar__delete-btn--confirm"
+                onClick={confirmDelete}
               >
                 Delete
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
-    </div>
+    </>
   );
 };
 

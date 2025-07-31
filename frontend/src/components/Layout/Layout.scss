@@ -1,0 +1,26 @@
+.layout {
+  display: flex;
+  height: 100vh;
+  background-color: #fafafa;
+
+  &__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: margin-left 0.3s ease;
+
+    &.sidebar-collapsed {
+      margin-left: -280px;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .layout {
+    &__main {
+      margin-left: 0;
+    }
+  }
+} 
