@@ -21,7 +21,7 @@ const mockMessages: ChatMessageType[] = [
 ];
 
 const ChatDialog = () => {
-  const [messages, setMessages] = useState<ChatMessageType[]>(mockMessages);
+  const [messages] = useState<ChatMessageType[]>(mockMessages);
 
   return (
     <div className="chat-dialog">

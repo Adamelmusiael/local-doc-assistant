@@ -8,7 +8,6 @@ import {
   ApiResponse,
   SendMessageRequest,
   SendMessageResponse,
-  UploadFileRequest,
   UploadFileResponse,
 } from '../types';
 
