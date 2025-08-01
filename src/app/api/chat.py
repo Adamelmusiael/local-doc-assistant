@@ -41,6 +41,8 @@ class ChatRequest(BaseModel):
     """Request model for sending a chat message"""
     question: str = Field(..., description="The question to ask")
     model: Optional[str] = Field(None, description="LLM model to use (default: mistral)")
+    selected_document_ids: Optional[List[int]] = Field(None, description="List of document IDs to focus on")
+    search_mode: Optional[str] = Field("all", description="Search mode to use: 'all', 'hybrid', 'selected_only'")
 
 # Response Models
 class ChatSessionResponse(BaseModel):
@@ -119,7 +121,13 @@ async def chat_message_with_metadata(session_id: int, request: ChatRequest):
                     model = chat_session.llm_model
                 else:
                     model = "mistral"
-        result = handle_chat_message(session_id, request.question, model=model)
+        result = handle_chat_message(
+            session_id,
+            request.question,
+            model=model,
+            selected_document_ids=request.selected_document_ids,
+            search_mode=request.search_mode
+            )
         return SessionChatResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error handling chat message: {str(e)}")

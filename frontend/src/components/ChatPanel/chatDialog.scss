@@ -1,0 +1,10 @@
+.chat-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+
+  &__messages {
+    flex: 1;
+    overflow-y: auto;
+  }
+}
