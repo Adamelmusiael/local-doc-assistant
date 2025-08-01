@@ -1,4 +1,4 @@
-# Local RAG Frontend
+#  RAG Frontend
 
 React + TypeScript + Vite + Tailwind CSS frontend for the Local RAG application.
 
