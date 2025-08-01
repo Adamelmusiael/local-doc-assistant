@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import sys
+import asyncio
 from pathlib import Path
 from src.db.database import get_session
 from src.db.models import ChatSession, ChatMessage
@@ -102,7 +104,6 @@ class DeleteResponse(BaseModel):
     """Response model for delete operations"""
     message: str
     session_id: int
-
 
 @router.post("/{session_id}/message", response_model=SessionChatResponse)
 async def chat_message_with_metadata(session_id: int, request: ChatRequest):
