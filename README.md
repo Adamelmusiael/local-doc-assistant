@@ -1,5 +1,6 @@
-# AI Assistant
 
+# AI Assistant
+###### This project is being developed as part of an internship at NoA Ignite
 
 ## Features
 - Upload and manage PDF documents with metadata
