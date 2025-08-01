@@ -25,9 +25,10 @@ app.add_middleware(
         "Authorization",
         "X-Requested-With",
         "X-CSRF-Token",
-        "Cache-Control"
+        "Cache-Control",
+        "X-Accel-Buffering"  # For SSE streaming
     ],
-    expose_headers=["Content-Range", "X-Content-Range"],
+    expose_headers=["Content-Range", "X-Content-Range", "Cache-Control"],
     max_age=600,  # Cache preflight requests for 10 minutes
 )
 

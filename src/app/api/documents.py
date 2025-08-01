@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from src.db.database import get_session
-from src.db.models import Document
+from src.db.models import Document, FileProcessingTask, ProcessingStatus
 from sqlmodel import select
 from pathlib import Path
 from src.vectorstore.qdrant_indexer import index_chunks
@@ -12,6 +12,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance
 from datetime import datetime
 import os
+import asyncio
 
 router = APIRouter()
 
@@ -93,6 +94,33 @@ class PreprocessResponse(BaseModel):
 
 class DeleteChunksResponse(BaseModel):
     """Response model for chunk deletion"""
+    message: str
+
+
+# Progress tracking response models
+class FileProcessingProgress(BaseModel):
+    """Response model for file processing progress"""
+    task_id: int
+    document_id: int
+    status: str
+    current_step: Optional[str]
+    progress_percentage: float
+    error_message: Optional[str]
+    started_at: str
+    updated_at: str
+    completed_at: Optional[str]
+    
+    # Step-specific progress
+    upload_progress: float
+    extraction_progress: float
+    chunking_progress: float
+    vectorization_progress: float
+
+
+class ProcessingStatusResponse(BaseModel):
+    """Response model for processing status check"""
+    success: bool
+    data: Optional[FileProcessingProgress] = None
     message: str
 
 
@@ -427,3 +455,263 @@ def preprocess_documents(request: PreprocessRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+
+
+# Background task functions for file processing
+async def update_processing_progress(task_id: int, step: str, progress: float, step_progress: Dict[str, float] = None):
+    """Update processing progress in database"""
+    with get_session() as session:
+        task = session.exec(select(FileProcessingTask).where(FileProcessingTask.id == task_id)).first()
+        if task:
+            task.current_step = step
+            task.progress_percentage = progress
+            task.updated_at = datetime.utcnow()
+            
+            if step_progress:
+                if "upload" in step_progress:
+                    task.upload_progress = step_progress["upload"]
+                if "extraction" in step_progress:
+                    task.extraction_progress = step_progress["extraction"]
+                if "chunking" in step_progress:
+                    task.chunking_progress = step_progress["chunking"]
+                if "vectorization" in step_progress:
+                    task.vectorization_progress = step_progress["vectorization"]
+            
+            session.add(task)
+            session.commit()
+
+
+async def process_file_background(task_id: int, document_id: int, file_path: str, metadata: Dict[str, Any]):
+    """Background task to process uploaded file"""
+    try:
+        # Update status to extracting
+        await update_processing_progress(task_id, "Text Extraction", 25.0, {"extraction": 0.0})
+        
+        # Text extraction
+        await asyncio.sleep(0.1)  # Simulate processing time
+        processed_chunks = preprocess_document_to_chunks(file_path, metadata=metadata)
+        await update_processing_progress(task_id, "Text Extraction", 50.0, {"extraction": 100.0})
+        
+        # Update status to chunking
+        await update_processing_progress(task_id, "Chunking", 60.0, {"chunking": 0.0})
+        await asyncio.sleep(0.1)
+        await update_processing_progress(task_id, "Chunking", 75.0, {"chunking": 100.0})
+        
+        # Update status to vectorizing
+        await update_processing_progress(task_id, "Vectorization", 80.0, {"vectorization": 0.0})
+        
+        # Index the chunks
+        index_chunks(processed_chunks)
+        await update_processing_progress(task_id, "Vectorization", 95.0, {"vectorization": 100.0})
+        
+        # Complete processing
+        with get_session() as session:
+            # Update document status
+            document = session.exec(select(Document).where(Document.id == document_id)).first()
+            if document:
+                document.processed = True
+                session.add(document)
+            
+            # Update task status
+            task = session.exec(select(FileProcessingTask).where(FileProcessingTask.id == task_id)).first()
+            if task:
+                task.status = ProcessingStatus.COMPLETED
+                task.current_step = "Completed"
+                task.progress_percentage = 100.0
+                task.completed_at = datetime.utcnow()
+                task.updated_at = datetime.utcnow()
+                session.add(task)
+            
+            session.commit()
+            
+    except Exception as e:
+        # Update task with error status
+        with get_session() as session:
+            task = session.exec(select(FileProcessingTask).where(FileProcessingTask.id == task_id)).first()
+            if task:
+                task.status = ProcessingStatus.FAILED
+                task.error_message = str(e)
+                task.updated_at = datetime.utcnow()
+                session.add(task)
+                session.commit()
+
+
+@router.post("/upload_file_async", response_model=Dict[str, Any])
+async def upload_file_async(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(..., description="PDF file to upload"),
+    confidentiality: str = Form(..., description="Confidentiality level of the document"),
+    department: Optional[str] = Form(None, description="Department associated with the document"),
+    client: Optional[str] = Form(None, description="Client associated with the document")
+):
+    """
+    Upload a PDF file with background processing and progress tracking.
+    
+    Returns immediately with a task ID that can be used to track processing progress.
+    """
+    
+    # Validate file type
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+    
+    # Validate file size
+    if file.size == 0:
+        raise HTTPException(status_code=400, detail="File is empty")
+    
+    try:
+        # Generate unique filename
+        file_extension = Path(file.filename).suffix
+        base_name = Path(file.filename).stem
+        candidate_name = f"{base_name}{file_extension}"
+        counter = 1
+        while (UPLOAD_DIR / candidate_name).exists():
+            candidate_name = f"{base_name}({counter}){file_extension}"
+            counter += 1
+        unique_filename = candidate_name
+        file_path = UPLOAD_DIR / unique_filename
+        
+        # Save file
+        contents = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(contents)
+        
+        # Save metadata to database
+        with get_session() as session:
+            document = Document(
+                filename=file.filename,
+                confidentiality=confidentiality,
+                department=department,
+                client=client,
+                pointer_to_loc=str(file_path),
+                processed=False
+            )
+            session.add(document)
+            session.commit()
+            session.refresh(document)
+            
+            # Create processing task
+            task = FileProcessingTask(
+                document_id=document.id,
+                status=ProcessingStatus.UPLOADING,
+                current_step="File Upload",
+                upload_progress=100.0
+            )
+            session.add(task)
+            session.commit()
+            session.refresh(task)
+            
+            # Start background processing
+            metadata = {
+                "document_id": document.id,
+                "confidentiality": confidentiality,
+                "department": department,
+                "client": client
+            }
+            
+            background_tasks.add_task(
+                process_file_background,
+                task.id,
+                document.id,
+                str(file_path),
+                metadata
+            )
+            
+            return {
+                "message": "File uploaded successfully, processing started",
+                "document_id": document.id,
+                "task_id": task.id,
+                "filename": file.filename,
+                "status": "processing",
+                "progress_endpoint": f"/docs/processing/{task.id}/status"
+            }
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
+
+
+@router.get("/processing/{task_id}/status", response_model=ProcessingStatusResponse)
+async def get_processing_status(task_id: int):
+    """
+    Get the current processing status of a file upload task.
+    
+    Returns detailed progress information including current step and percentages.
+    """
+    try:
+        with get_session() as session:
+            task = session.exec(select(FileProcessingTask).where(FileProcessingTask.id == task_id)).first()
+            
+            if not task:
+                return ProcessingStatusResponse(
+                    success=False,
+                    message=f"Task {task_id} not found"
+                )
+            
+            progress_data = FileProcessingProgress(
+                task_id=task.id,
+                document_id=task.document_id,
+                status=task.status.value,
+                current_step=task.current_step,
+                progress_percentage=task.progress_percentage,
+                error_message=task.error_message,
+                started_at=task.started_at.isoformat(),
+                updated_at=task.updated_at.isoformat(),
+                completed_at=task.completed_at.isoformat() if task.completed_at else None,
+                upload_progress=task.upload_progress,
+                extraction_progress=task.extraction_progress,
+                chunking_progress=task.chunking_progress,
+                vectorization_progress=task.vectorization_progress
+            )
+            
+            return ProcessingStatusResponse(
+                success=True,
+                data=progress_data,
+                message="Status retrieved successfully"
+            )
+            
+    except Exception as e:
+        return ProcessingStatusResponse(
+            success=False,
+            message=f"Error retrieving status: {str(e)}"
+        )
+
+
+@router.get("/processing/active")
+async def get_active_processing_tasks():
+    """
+    Get all currently active processing tasks.
+    
+    Returns list of tasks that are currently being processed.
+    """
+    try:
+        with get_session() as session:
+            statement = select(FileProcessingTask).where(
+                FileProcessingTask.status.in_([
+                    ProcessingStatus.PENDING,
+                    ProcessingStatus.UPLOADING,
+                    ProcessingStatus.EXTRACTING,
+                    ProcessingStatus.CHUNKING,
+                    ProcessingStatus.VECTORIZING
+                ])
+            )
+            active_tasks = session.exec(statement).all()
+            
+            tasks_data = []
+            for task in active_tasks:
+                tasks_data.append({
+                    "task_id": task.id,
+                    "document_id": task.document_id,
+                    "status": task.status.value,
+                    "current_step": task.current_step,
+                    "progress_percentage": task.progress_percentage,
+                    "started_at": task.started_at.isoformat(),
+                    "updated_at": task.updated_at.isoformat()
+                })
+            
+            return {
+                "message": "Active tasks retrieved successfully",
+                "total_active_tasks": len(tasks_data),
+                "tasks": tasks_data
+            }
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving active tasks: {str(e)}")

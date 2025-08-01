@@ -1,6 +1,18 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
+from enum import Enum
+
+
+# Enums for status tracking
+class ProcessingStatus(str, Enum):
+    PENDING = "pending"
+    UPLOADING = "uploading"
+    EXTRACTING = "extracting"
+    CHUNKING = "chunking"
+    VECTORIZING = "vectorizing"
+    COMPLETED = "completed"
+    FAILED = "failed"
 
 
 # main table prototype
@@ -29,6 +41,7 @@ class ChatSession(SQLModel, table=True):
     status: Optional[str] = None   # e.g. 'active', 'archived', 'finished'
     session_metadata: Optional[str] = None # e.g. JSON string with additional information
 
+
 class ChatMessage(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -39,5 +52,35 @@ class ChatMessage(SQLModel, table=True):
     sources: Optional[str] = None  # e.g. JSON string with list of sources
     confidence: Optional[float] = None
     hallucination: Optional[float] = None
+
+
+class FileProcessingTask(SQLModel, table=True):
+    """Track file processing progress and status"""
+    __table_args__ = {"extend_existing": True}
+    id: Optional[int] = Field(default=None, primary_key=True)
+    document_id: int = Field(foreign_key="document.id")
+    status: ProcessingStatus = Field(default=ProcessingStatus.PENDING)
+    current_step: Optional[str] = None
+    progress_percentage: float = Field(default=0.0)
+    error_message: Optional[str] = None
+    started_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    completed_at: Optional[datetime] = None
+    
+    # Step-specific progress tracking
+    upload_progress: float = Field(default=0.0)
+    extraction_progress: float = Field(default=0.0)
+    chunking_progress: float = Field(default=0.0)
+    vectorization_progress: float = Field(default=0.0)
+
+
+class TypingIndicator(SQLModel, table=True):
+    """Track typing indicators for real-time chat"""
+    __table_args__ = {"extend_existing": True}
+    id: Optional[int] = Field(default=None, primary_key=True)
+    session_id: int = Field(foreign_key="chatsession.id")
+    user_id: Optional[str] = None
+    is_typing: bool = Field(default=False)
+    last_updated: datetime = Field(default_factory=datetime.utcnow)
 
 

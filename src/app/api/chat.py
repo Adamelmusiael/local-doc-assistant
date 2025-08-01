@@ -1,7 +1,7 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, AsyncGenerator
 import sys
 import asyncio
 from pathlib import Path
@@ -12,6 +12,8 @@ from sqlalchemy import func
 from sqlmodel import delete
 import os
 import openai
+import json
+from datetime import datetime
 
 # Add the src directory to Python path
 src_path = Path(__file__).parent.parent.parent
@@ -105,6 +107,24 @@ class DeleteResponse(BaseModel):
     message: str
     session_id: int
 
+
+# Enhanced response models for better error handling
+class ErrorDetail(BaseModel):
+    """Detailed error information"""
+    error_code: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
+    timestamp: str
+
+
+class EnhancedResponse(BaseModel):
+    """Enhanced response wrapper with success/error handling"""
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    error: Optional[ErrorDetail] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
 @router.post("/{session_id}/message", response_model=SessionChatResponse)
 async def chat_message_with_metadata(session_id: int, request: ChatRequest):
     """
@@ -132,6 +152,69 @@ async def chat_message_with_metadata(session_id: int, request: ChatRequest):
         return SessionChatResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error handling chat message: {str(e)}")
+
+
+@router.post("/{session_id}/stream")
+async def stream_chat_message(session_id: int, request: ChatRequest):
+    """
+    Stream a chat message response using Server-Sent Events (SSE).
+    
+    Provides real-time streaming of AI responses similar to ChatGPT.
+    Returns chunks of the response as they are generated.
+    """
+    async def generate_stream() -> AsyncGenerator[str, None]:
+        try:
+            # Import streaming handler
+            from chat_logic.message_handler import handle_chat_message_stream
+            
+            # Get model
+            model = request.model
+            if not model or model == "string":
+                with get_session() as session:
+                    chat_session = session.exec(select(ChatSession).where(ChatSession.id == session_id)).first()
+                    if chat_session and chat_session.llm_model:
+                        model = chat_session.llm_model
+                    else:
+                        model = "mistral"
+            
+            # Send initial metadata
+            yield f"data: {json.dumps({'type': 'start', 'session_id': session_id, 'model': model})}\n\n"
+            
+            # Stream the response
+            full_response = ""
+            async for chunk_data in handle_chat_message_stream(
+                session_id,
+                request.question,
+                model=model,
+                selected_document_ids=request.selected_document_ids,
+                search_mode=request.search_mode
+            ):
+                if chunk_data["type"] == "chunk":
+                    full_response += chunk_data["content"]
+                
+                # Send chunk as SSE
+                yield f"data: {json.dumps(chunk_data)}\n\n"
+            
+            # Send completion signal
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            
+        except Exception as e:
+            # Send error message
+            error_data = {
+                "type": "error",
+                "error": str(e)
+            }
+            yield f"data: {json.dumps(error_data)}\n\n"
+    
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"  # Disable buffering
+        }
+    )
 
 
 @router.get("/chat_sessions", response_model=ChatSessionsListResponse)
@@ -279,3 +362,57 @@ async def get_chat_messages(session_id: int):
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving messages: {str(e)}")
+
+
+# Simple WebSocket endpoint for single-user chat
+@router.websocket("/{session_id}/ws")
+async def websocket_endpoint(websocket: WebSocket, session_id: int):
+    """
+    Simple WebSocket endpoint for real-time chat streaming.
+    
+    Provides real-time chat message streaming for a single user.
+    """
+    await websocket.accept()
+    
+    try:
+        while True:
+            # Wait for message from client
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            
+            if message_data.get("type") == "chat_message":
+                try:
+                    from chat_logic.message_handler import handle_chat_message_stream
+                    
+                    # Send acknowledgment
+                    await websocket.send_text(json.dumps({
+                        "type": "ack", 
+                        "message": "Message received"
+                    }))
+                    
+                    # Stream the response
+                    async for chunk in handle_chat_message_stream(
+                        session_id,
+                        message_data.get("question", ""),
+                        model=message_data.get("model", "mistral"),
+                        selected_document_ids=message_data.get("selected_document_ids"),
+                        search_mode=message_data.get("search_mode", "all")
+                    ):
+                        await websocket.send_text(json.dumps(chunk))
+                        
+                except Exception as e:
+                    error_message = {
+                        "type": "error",
+                        "content": f"Error processing message: {str(e)}"
+                    }
+                    await websocket.send_text(json.dumps(error_message))
+            
+            elif message_data.get("type") == "ping":
+                # Simple ping/pong for connection health
+                await websocket.send_text(json.dumps({"type": "pong"}))
+                    
+    except WebSocketDisconnect:
+        print(f"WebSocket disconnected for session {session_id}")
+    except Exception as e:
+        print(f"WebSocket error for session {session_id}: {e}")
+        await websocket.close()
