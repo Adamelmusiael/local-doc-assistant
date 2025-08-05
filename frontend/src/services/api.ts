@@ -55,7 +55,7 @@ export const fileAPI = {
   },
 
   // List all files
-  listFiles: async (): Promise<ApiResponse<FileType[]>> => {
+  listFiles: async (): Promise<any> => {
     const response = await axios.get(`/docs/list_documents`);
     return response.data;
   },

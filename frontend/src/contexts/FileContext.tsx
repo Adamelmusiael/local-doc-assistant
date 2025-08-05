@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { File, ProcessingStatus } from '../types';
+import { fileAPI } from '../services/api';
 
 // State interface for file context
 interface FileState {
@@ -25,36 +26,9 @@ type FileAction =
   | { type: 'REMOVE_SELECTED_FILE'; payload: string }
   | { type: 'CLEAR_SELECTED_FILES' };
 
-// Initial state
+// Initial state - Start with empty files, will load from API
 const initialState: FileState = {
-  files: [
-    {
-      id: 'file_1',
-      name: 'sample-document.pdf',
-      originalName: 'sample-document.pdf',
-      size: 1024000,
-      type: 'application/pdf',
-      uploadDate: '2024-01-15T10:30:00Z',
-      isPublic: true,
-      isConfidential: false,
-      processingStatus: ProcessingStatus.COMPLETED,
-      chunks: [],
-      metadata: {}
-    },
-    {
-      id: 'file_2',
-      name: 'confidential-report.pdf',
-      originalName: 'confidential-report.pdf',
-      size: 2048000,
-      type: 'application/pdf',
-      uploadDate: '2024-01-14T15:45:00Z',
-      isPublic: false,
-      isConfidential: true,
-      processingStatus: ProcessingStatus.COMPLETED,
-      chunks: [],
-      metadata: {}
-    }
-  ],
+  files: [], // Start empty - will be populated from backend
   isLoading: false,
   error: null,
   uploadProgress: {},
@@ -136,7 +110,8 @@ interface FileContextType {
   state: FileState;
   dispatch: React.Dispatch<FileAction>;
   // Convenience methods
-  uploadFile: (file: File, isPublic: boolean, isConfidential: boolean) => Promise<void>;
+  loadFiles: () => Promise<void>; // New method to load files from API
+  uploadFile: (file: globalThis.File, isPublic: boolean, isConfidential: boolean) => Promise<void>; // Use native File type
   deleteFile: (fileId: string) => Promise<void>;
   getFile: (fileId: string) => File | undefined;
   getFilesByStatus: (status: ProcessingStatus) => File[];
@@ -149,6 +124,30 @@ interface FileContextType {
 // Create context
 const FileContext = createContext<FileContextType | undefined>(undefined);
 
+// Helper function to transform backend data to frontend format
+const transformBackendFile = (backendFile: any): File => {
+  return {
+    id: String(backendFile.id), // Convert number to string
+    name: backendFile.filename || 'Unknown',
+    originalName: backendFile.filename || 'Unknown',
+    size: 0, // Backend doesn't provide size in this endpoint
+    type: 'application/pdf', // Default type, backend doesn't provide this
+    uploadDate: backendFile.created_at || new Date().toISOString(),
+    isPublic: backendFile.confidentiality === 'public',
+    isConfidential: backendFile.confidentiality === 'confidential',
+    processingStatus: backendFile.processed ? ProcessingStatus.COMPLETED : ProcessingStatus.PENDING,
+    chunks: [],
+    metadata: {
+      // Limited metadata from this endpoint
+      extractedText: undefined,
+      pageCount: undefined,
+      wordCount: undefined,
+      language: undefined,
+      processingTime: undefined
+    }
+  };
+};
+
 // Provider component
 interface FileProviderProps {
   children: ReactNode;
@@ -157,41 +156,63 @@ interface FileProviderProps {
 export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(fileReducer, initialState);
 
-  // Convenience methods
-  const uploadFile = async (file: File, isPublic: boolean, isConfidential: boolean) => {
+  // Load files from backend API
+  const loadFiles = async () => {
     try {
+      console.log('Loading files from backend...');
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
       
-      // Create a new file object with proper structure
-      const newFile: File = {
-        id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: file.name,
-        originalName: file.name,
-        size: file.size,
-        type: file.type,
-        uploadDate: new Date().toISOString(),
-        isPublic,
-        isConfidential,
-        processingStatus: ProcessingStatus.PROCESSING,
-        chunks: [],
-        metadata: {}
-      };
+      const response = await fileAPI.listFiles();
+      console.log('RAW API Response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Response.documents exists:', !!response.documents);
+      console.log('Response.documents length:', response.documents ? response.documents.length : 'N/A');
       
-      dispatch({ type: 'ADD_FILE', payload: newFile });
-      
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update to completed status
-      const completedFile: File = {
-        ...newFile,
-        processingStatus: ProcessingStatus.COMPLETED,
-      };
-      
-      dispatch({ type: 'UPDATE_FILE', payload: completedFile });
+      // Handle the actual backend response structure: {message, total_documents, documents}
+      if (response.documents && response.documents.length > 0) {
+        console.log('Starting file transformation...');
+        // Transform backend data to frontend format
+        const transformedFiles = response.documents.map(transformBackendFile);
+        console.log('Transformed files:', transformedFiles);
+        dispatch({ type: 'SET_FILES', payload: transformedFiles });
+        console.log(`Loaded ${transformedFiles.length} files successfully`);
+      } else {
+        console.log('No files found in backend - setting empty array');
+        dispatch({ type: 'SET_FILES', payload: [] });
+      }
       
     } catch (error) {
+      console.error('Failed to load files:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load files';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      // Don't clear existing files on error, user can retry
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // Load files when component mounts
+  useEffect(() => {
+    loadFiles();
+  }, []);
+
+  // Convenience methods
+  const uploadFile = async (fileToUpload: globalThis.File, isPublic: boolean, isConfidential: boolean) => {
+    try {
+      console.log('Uploading file:', fileToUpload.name);
+      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null });
+      
+      // Call real API instead of mock
+      const response = await fileAPI.uploadFile(fileToUpload, isPublic, isConfidential);
+      console.log('File uploaded successfully:', response);
+      
+      // Reload files to get the updated list from backend
+      await loadFiles();
+      
+    } catch (error) {
+      console.error('File upload failed:', error);
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Upload failed' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -200,13 +221,18 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
 
   const deleteFile = async (fileId: string) => {
     try {
+      console.log('Deleting file:', fileId);
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      // TODO: Replace with actual API call
-      // await fileAPI.deleteFile(fileId);
+      // Call real API instead of mock
+      await fileAPI.deleteFile(fileId);
+      console.log('File deleted successfully');
       
+      // Remove from local state
       dispatch({ type: 'DELETE_FILE', payload: fileId });
+      
     } catch (error) {
+      console.error('File deletion failed:', error);
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Delete failed' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -258,6 +284,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     dispatch,
     uploadFile,
     deleteFile,
+    loadFiles,
     getFile,
     getFilesByStatus,
     selectFile,

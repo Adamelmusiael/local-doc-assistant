@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { chatAPI, fileAPI } from '../services/api';
+import { chatAPI, fileAPI } from '../frontend/src/services/api';
 
 interface HealthStatus {
   status: string;
@@ -37,9 +37,9 @@ const HealthCheck: React.FC = () => {
     setError(null);
     
     try {
-      console.log('🏥 Testing health endpoint...');
+      console.log('Testing health endpoint...');
       const response = await axios.get('/health');
-      console.log('✅ Health check response:', response.data);
+      console.log('Health check response:', response.data);
       
       setHealthStatus({
         ...response.data,
@@ -47,7 +47,7 @@ const HealthCheck: React.FC = () => {
       });
       addTestResult('/health', 'success', 'Health check successful');
     } catch (err) {
-      console.error('❌ Health check failed:', err);
+      console.error('Health check failed:', err);
       const errorMsg = err instanceof Error ? err.message : 'Health check failed';
       setError(errorMsg);
       addTestResult('/health', 'error', errorMsg);
@@ -59,12 +59,12 @@ const HealthCheck: React.FC = () => {
   const testFileEndpoints = async () => {
     setIsLoading(true);
     try {
-      console.log('📁 Testing file list endpoint...');
+      console.log('Testing file list endpoint...');
       const response = await fileAPI.listFiles();
-      console.log('✅ File list response:', response);
+      console.log('File list response:', response);
       addTestResult('/docs/list_documents', 'success', `Found ${response.data?.length || 0} files`);
     } catch (err) {
-      console.error('❌ File list failed:', err);
+      console.error('File list failed:', err);
       const errorMsg = err instanceof Error ? err.message : 'File list failed';
       addTestResult('/docs/list_documents', 'error', errorMsg);
     } finally {
@@ -75,12 +75,12 @@ const HealthCheck: React.FC = () => {
   const testChatEndpoints = async () => {
     setIsLoading(true);
     try {
-      console.log('💬 Testing chat sessions endpoint...');
+      console.log('Testing chat sessions endpoint...');
       const response = await chatAPI.listChats();
-      console.log('✅ Chat sessions response:', response);
+      console.log('Chat sessions response:', response);
       addTestResult('/chat/chat_sessions', 'success', `Found ${response.data?.length || 0} chat sessions`);
     } catch (err) {
-      console.error('❌ Chat sessions failed:', err);
+      console.error('Chat sessions failed:', err);
       const errorMsg = err instanceof Error ? err.message : 'Chat sessions failed';
       addTestResult('/chat/chat_sessions', 'error', errorMsg);
     } finally {
@@ -93,16 +93,16 @@ const HealthCheck: React.FC = () => {
     setError(null);
     
     try {
-      console.log('🏠 Testing root endpoint...');
+      console.log('Testing root endpoint...');
       const response = await axios.get('/');
-      console.log('✅ Root endpoint response:', response.data);
+      console.log('Root endpoint response:', response.data);
       
       setHealthStatus({
         ...response.data,
         timestamp: new Date().toLocaleTimeString()
       });
     } catch (err) {
-      console.error('❌ Root endpoint failed:', err);
+      console.error('Root endpoint failed:', err);
       setError(err instanceof Error ? err.message : 'Root endpoint failed');
     } finally {
       setIsLoading(false);
@@ -122,7 +122,7 @@ const HealthCheck: React.FC = () => {
       margin: '20px',
       backgroundColor: '#f9f9f9'
     }}>
-      <h2>🏥 Backend Health Check</h2>
+      <h2>Backend Health Check</h2>
       
       <div style={{ marginBottom: '20px' }}>
         <button 
@@ -138,7 +138,7 @@ const HealthCheck: React.FC = () => {
             cursor: isLoading ? 'not-allowed' : 'pointer'
           }}
         >
-          {isLoading ? '🔄 Checking...' : '🏥 Test /health'}
+          {isLoading ? 'Checking...' : 'Test /health'}
         </button>
         
         <button 
@@ -154,7 +154,7 @@ const HealthCheck: React.FC = () => {
             cursor: isLoading ? 'not-allowed' : 'pointer'
           }}
         >
-          {isLoading ? '🔄 Checking...' : '🏠 Test /'}
+          {isLoading ? 'Checking...' : 'Test /'}
         </button>
 
         <button 
@@ -170,7 +170,7 @@ const HealthCheck: React.FC = () => {
             cursor: isLoading ? 'not-allowed' : 'pointer'
           }}
         >
-          {isLoading ? '🔄 Testing...' : '📁 Test Files API'}
+          {isLoading ? 'Testing...' : 'Test Files API'}
         </button>
 
         <button 
@@ -185,7 +185,7 @@ const HealthCheck: React.FC = () => {
             cursor: isLoading ? 'not-allowed' : 'pointer'
           }}
         >
-          {isLoading ? '🔄 Testing...' : '💬 Test Chat API'}
+          {isLoading ? ' Testing...' : ' Test Chat API'}
         </button>
       </div>
 
@@ -198,7 +198,7 @@ const HealthCheck: React.FC = () => {
           marginBottom: '10px'
         }}>
           <h3 style={{ color: '#155724', margin: '0 0 10px 0' }}>
-            ✅ Backend is Healthy!
+             Backend is Healthy!
           </h3>
           <div><strong>Status:</strong> {healthStatus.status}</div>
           {healthStatus.service && <div><strong>Service:</strong> {healthStatus.service}</div>}
@@ -216,7 +216,7 @@ const HealthCheck: React.FC = () => {
           marginBottom: '20px'
         }}>
           <h3 style={{ color: '#721c24', margin: '0 0 10px 0' }}>
-            ❌ Backend Connection Failed
+             Backend Connection Failed
           </h3>
           <div><strong>Error:</strong> {error}</div>
           <div style={{ marginTop: '10px', fontSize: '14px', color: '#6c757d' }}>
@@ -239,7 +239,7 @@ const HealthCheck: React.FC = () => {
           backgroundColor: '#f8f9fa',
           borderRadius: '4px'
         }}>
-          <h3 style={{ margin: '0 0 15px 0' }}>🧪 API Test Results</h3>
+          <h3 style={{ margin: '0 0 15px 0' }}> API Test Results</h3>
           {testResults.map((result, index) => (
             <div 
               key={index}
@@ -255,7 +255,7 @@ const HealthCheck: React.FC = () => {
                 color: result.status === 'success' ? '#155724' : '#721c24',
                 fontWeight: 'bold'
               }}>
-                {result.status === 'success' ? '✅' : '❌'} {result.endpoint}
+                {result.status === 'success' ? '' : ''} {result.endpoint}
               </div>
               <div style={{ fontSize: '14px', marginTop: '5px' }}>
                 {result.message} - {result.timestamp}
@@ -272,7 +272,7 @@ const HealthCheck: React.FC = () => {
         borderRadius: '4px',
         fontSize: '14px'
       }}>
-        <strong>💡 How the API fix works:</strong>
+        <strong> How the API fix works:</strong>
         <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
           <li><strong>/health</strong> → <code>GET http://localhost:8000/health</code></li>
           <li><strong>/docs/list_documents</strong> → <code>GET http://localhost:8000/docs/list_documents</code></li>
