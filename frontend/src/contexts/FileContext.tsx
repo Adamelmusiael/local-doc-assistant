@@ -111,7 +111,7 @@ interface FileContextType {
   dispatch: React.Dispatch<FileAction>;
   // Convenience methods
   loadFiles: () => Promise<void>; // New method to load files from API
-  uploadFile: (file: globalThis.File, isPublic: boolean, isConfidential: boolean) => Promise<void>; // Use native File type
+  uploadFile: (file: globalThis.File, isConfidential: boolean) => Promise<void>; // Use native File type
   deleteFile: (fileId: string) => Promise<void>;
   getFile: (fileId: string) => File | undefined;
   getFilesByStatus: (status: ProcessingStatus) => File[];
@@ -198,14 +198,14 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
   }, []);
 
   // Convenience methods
-  const uploadFile = async (fileToUpload: globalThis.File, isPublic: boolean, isConfidential: boolean) => {
+  const uploadFile = async (fileToUpload: globalThis.File, isConfidential: boolean) => {
     try {
       console.log('Uploading file:', fileToUpload.name);
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
       
       // Call real API instead of mock
-      const response = await fileAPI.uploadFile(fileToUpload, isPublic, isConfidential);
+      const response = await fileAPI.uploadFile(fileToUpload, isConfidential);
       console.log('File uploaded successfully:', response);
       
       // Reload files to get the updated list from backend

@@ -112,12 +112,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose }) => {
         await simulateFileProcessing(currentIndex, setSelectedFiles);
 
         // Upload file - convert browser File to our File type
-        const fileData = {
-          name: fileWithProgress.file.name,
-          size: fileWithProgress.file.size,
-          type: fileWithProgress.file.type
-        };
-        await uploadFile(fileData as any, privacySetting === 'public', privacySetting === 'confidential');
+        const { file } = fileWithProgress;
+        await uploadFile(file, privacySetting === 'confidential');
         
         setSelectedFiles(prev => prev.map((f, idx) => 
           idx === currentIndex ? { 
