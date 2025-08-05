@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { File, ProcessingStatus } from '../../types';
 import { useFile } from '../../contexts/FileContext';
+import { simulateFileDownload, simulateFilePreview } from '../../mock/fileUploadMocks';
 import './FileList.scss';
 
 interface FileListProps {
@@ -82,16 +83,11 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
   };
 
   const handleDownload = (file: File) => {
-    // Simulate download
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob(['Simulated file content']));
-    link.download = file.originalName;
-    link.click();
+    simulateFileDownload(file.originalName);
   };
 
   const handlePreview = (file: File) => {
-    // Simulate preview - in real app this would open a modal or new tab
-    window.open(`/api/files/${file.id}/preview`, '_blank');
+    simulateFilePreview(file.id);
   };
 
   if (files.length === 0) {

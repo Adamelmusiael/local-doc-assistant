@@ -3,36 +3,8 @@ import ChatDialog from "../components/ChatPanel/ChatDialog";
 import Layout from "../components/Layout/Layout";
 import ChatHeader from "../components/ChatPanel/ChatHeader";
 import "./chat.scss";
-import { Model, SearchMode } from "../types";
-
-// Mock models for demonstration
-const mockModels: Model[] = [
-  {
-    id: "gpt-4",
-    name: "GPT-4",
-    description: "Most capable model for complex tasks",
-    provider: "OpenAI",
-    maxTokens: 8192,
-    isAvailable: true,
-    default: true,
-  },
-  {
-    id: "gpt-3.5-turbo",
-    name: "GPT-3.5 Turbo",
-    description: "Fast and efficient for most tasks",
-    provider: "OpenAI",
-    maxTokens: 4096,
-    isAvailable: true,
-  },
-  {
-    id: "claude-3",
-    name: "Claude 3",
-    description: "Anthropic's latest model",
-    provider: "Anthropic",
-    maxTokens: 100000,
-    isAvailable: true,
-  },
-];
+import { SearchMode } from "../types";
+import { mockModels } from "../mock/chatMocks";
 
 interface ChatProps {
   onToggleSidebar?: () => void;
