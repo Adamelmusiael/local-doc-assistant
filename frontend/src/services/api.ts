@@ -11,25 +11,25 @@ import {
   UploadFileResponse,
 } from '../types';
 
-const API_BASE = '/api';
+// Note: Removed API_BASE - using direct paths to match backend endpoints
 
 // --- Chat Operations ---
 export const chatAPI = {
   // Send a message to the chat endpoint
   sendMessage: async (data: SendMessageRequest): Promise<ApiResponse<SendMessageResponse>> => {
-    const response = await axios.post(`${API_BASE}/chat`, data);
+    const response = await axios.post(`/chat/${data.chatId}/message`, data);
     return response.data;
   },
 
   // Get chat history for a specific chat session
   getHistory: async (chatId: string): Promise<ApiResponse<Chat>> => {
-    const response = await axios.get(`${API_BASE}/chat/${chatId}`);
+    const response = await axios.get(`/chat/chat_sessions/${chatId}`);
     return response.data;
   },
 
   // List all chat sessions
   listChats: async (): Promise<ApiResponse<Chat[]>> => {
-    const response = await axios.get(`${API_BASE}/chat/sessions`);
+    const response = await axios.get(`/chat/chat_sessions`);
     return response.data;
   },
 };
@@ -42,7 +42,7 @@ export const fileAPI = {
     formData.append('file', file);
     formData.append('isPublic', String(isPublic));
     formData.append('isConfidential', String(isConfidential));
-    const response = await axios.post(`${API_BASE}/documents`, formData, {
+    const response = await axios.post(`/docs/upload_file`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
@@ -50,13 +50,13 @@ export const fileAPI = {
 
   // Delete a file (and its chunks/metadata)
   deleteFile: async (fileId: string): Promise<ApiResponse<{ id: string }>> => {
-    const response = await axios.delete(`${API_BASE}/documents/${fileId}`);
+    const response = await axios.delete(`/docs/${fileId}`);
     return response.data;
   },
 
   // List all files
   listFiles: async (): Promise<ApiResponse<FileType[]>> => {
-    const response = await axios.get(`${API_BASE}/documents`);
+    const response = await axios.get(`/docs/list_documents`);
     return response.data;
   },
 };
@@ -65,7 +65,7 @@ export const fileAPI = {
 export const modelAPI = {
   // Get available models
   getModels: async (): Promise<ApiResponse<Model[]>> => {
-    const response = await axios.get(`${API_BASE}/models`);
+    const response = await axios.get(`/models`);
     return response.data;
   },
 };
@@ -74,7 +74,7 @@ export const modelAPI = {
 export const searchAPI = {
   // Search with different modes (selected, hybrid, all)
   search: async (query: string, mode: SearchMode, fileIds?: string[]): Promise<ApiResponse<ChatMessage[]>> => {
-    const response = await axios.post(`${API_BASE}/search`, {
+    const response = await axios.post(`/search`, {
       query,
       mode,
       fileIds,
