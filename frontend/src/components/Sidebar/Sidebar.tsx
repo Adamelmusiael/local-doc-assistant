@@ -4,6 +4,7 @@ import { useChat } from '../../contexts/ChatContext';
 import { useUser } from '../../contexts/UserContext';
 import ChatSession from './ChatSession';
 import BackendStatusIndicator from '../BackendStatusIndicator';
+import { APP_VERSION } from '../../config/version';
 import './sidebar.scss';
 
 // Icons (you can replace these with actual icon components)
@@ -77,7 +78,10 @@ const Sidebar: React.FC = () => {
           <div className="sidebar__logo-icon">
             <ChatIcon />
           </div>
-          <h1 className="sidebar__logo-text">AI Assistant</h1>
+          <div className="sidebar__logo-content">
+            <h1 className="sidebar__logo-text">AI Assistant</h1>
+            <div className="sidebar__version">{APP_VERSION}</div>
+          </div>
         </div>
       </div>
 

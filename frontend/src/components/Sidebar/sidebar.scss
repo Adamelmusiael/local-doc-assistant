@@ -33,6 +33,27 @@
     width: 32px;
     height: 32px;
     color: #6b7280;
+    flex-shrink: 0;
+  }
+
+  &__logo-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  &__logo-text {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+  }
+
+  &__version {
+    font-size: 12px;
+    font-weight: 400;
+    color: #9ca3af;
+    margin-top: 2px;
   }
 
   &__nav {
@@ -587,6 +608,10 @@
     &__logo-icon {
       width: 28px;
       height: 28px;
+    }
+
+    &__version {
+      font-size: 11px;
     }
 
     &__nav-item {
