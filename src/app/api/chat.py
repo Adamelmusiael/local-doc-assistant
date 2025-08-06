@@ -416,3 +416,54 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int):
     except Exception as e:
         print(f"WebSocket error for session {session_id}: {e}")
         await websocket.close()
+
+
+@router.get("/models")
+async def get_available_models():
+    """
+    Get list of available models from configuration.
+    
+    Returns all models defined in the config file with default model marked.
+    """
+    try:
+        from config import get_allowed_models, get_openai_models, get_default_model
+        
+        allowed_models = get_allowed_models()
+        openai_models = get_openai_models()
+        default_model = get_default_model()
+        
+        models = []
+        
+        # Add default model first (Mistral)
+        if default_model in allowed_models:
+            models.append({
+                "id": default_model,
+                "name": default_model.title(),
+                "description": "Local model - fast and efficient",
+                "provider": "Local",
+                "maxTokens": 4096,
+                "isAvailable": True,
+                "default": True
+            })
+        
+        # Add other models
+        for model in allowed_models:
+            if model != default_model:  # Skip default model as it's already added
+                is_openai = model in openai_models
+                models.append({
+                    "id": model,
+                    "name": model.replace("-", " ").title(),
+                    "description": f"{'OpenAI' if is_openai else 'Local'} model",
+                    "provider": "OpenAI" if is_openai else "Local",
+                    "maxTokens": 8192 if is_openai else 4096,
+                    "isAvailable": True,
+                    "default": False
+                })
+        
+        return {
+            "models": models,
+            "default_model": default_model
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving models: {str(e)}")

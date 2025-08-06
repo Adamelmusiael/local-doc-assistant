@@ -8,14 +8,25 @@ from vectorstore.qdrant_search import search_documents, search_documents_by_ids
 from db.models import Document
 import os
 import openai
+
 LLM_API_URL = os.getenv("LLM_API_URL", "http://localhost:11434/api/generate")
+
+def get_openai_models():
+    """Get OpenAI models from config (lazy loading)"""
+    from config import get_openai_models as _get_openai_models
+    return _get_openai_models()
+
+def get_allowed_models():
+    """Get allowed models from config (lazy loading)"""
+    from config import get_allowed_models as _get_allowed_models
+    return _get_allowed_models()
 
 
 def get_chat_history(session_id):
     return _get_chat_history(session_id)
 
 def generate_response(prompt, model="mistral"):
-    if model in OPENAI_MODELS:
+    if model in get_openai_models():
         openai.api_key = os.getenv("OPENAI_API_KEY")
         response = openai.chat.completions.create(
             model=model,
@@ -45,7 +56,7 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
     Generate streaming response from LLM.
     Yields chunks of text as they are generated.
     """
-    if model in OPENAI_MODELS:
+    if model in get_openai_models():
         # OpenAI streaming
         openai.api_key = os.getenv("OPENAI_API_KEY")
         try:
@@ -124,10 +135,6 @@ def store_chat_message(session_id, role, content, sources=None, confidence=None,
     }
     _store_chat_message(session_id, role, content, metadata=metadata)
 
-OPENAI_MODELS = {"gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano"}
-
-ALLOWED_MODELS = ["mistral", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano"]
-
 def handle_chat_message(
     session_id,
     user_question,
@@ -136,8 +143,9 @@ def handle_chat_message(
     search_mode="all"
 ):
     # Model validation
-    if model.lower() not in [model.lower() for model in ALLOWED_MODELS]:
-        raise ValueError(f"Model '{model}' is not supported. Please choose one of: {ALLOWED_MODELS}")
+    allowed_models = get_allowed_models()
+    if model.lower() not in [m.lower() for m in allowed_models]:
+        raise ValueError(f"Model '{model}' is not supported. Please choose one of: {allowed_models}")
     
     # 1. Get history
     chat_history = get_chat_history(session_id)
@@ -209,10 +217,11 @@ async def handle_chat_message_stream(
     """
     try:
         # Model validation
-        if model.lower() not in [m.lower() for m in ALLOWED_MODELS]:
+        allowed_models = get_allowed_models()
+        if model.lower() not in [m.lower() for m in allowed_models]:
             yield {
                 "type": "error",
-                "content": f"Model '{model}' is not supported. Choose from: {ALLOWED_MODELS}"
+                "content": f"Model '{model}' is not supported. Choose from: {allowed_models}"
             }
             return
         

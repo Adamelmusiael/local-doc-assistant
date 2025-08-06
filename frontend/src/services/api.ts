@@ -72,7 +72,7 @@ export const fileAPI = {
 export const modelAPI = {
   // Get available models
   getModels: async (): Promise<ApiResponse<Model[]>> => {
-    const response = await apiClient.get(`/models`);
+    const response = await apiClient.get(`/chat/models`);
     return response.data;
   },
 };

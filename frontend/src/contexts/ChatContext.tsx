@@ -63,7 +63,7 @@ const initialState: ChatState = {
           timestamp: new Date(Date.now() - 7200000).toISOString(),
         }
       ],
-      model: 'gpt-4',
+      model: 'mistral',
       createdAt: new Date(Date.now() - 7200000).toISOString(),
       updatedAt: new Date(Date.now() - 7200000).toISOString(),
       isActive: true,
@@ -72,7 +72,7 @@ const initialState: ChatState = {
       id: '3',
       title: 'API Integration',
       messages: [],
-      model: 'claude',
+      model: 'mistral',
       createdAt: new Date(Date.now() - 86400000).toISOString(),
       updatedAt: new Date(Date.now() - 86400000).toISOString(),
       isActive: true,
