@@ -3,13 +3,13 @@
   display: flex;
   flex-direction: column;
   background: #ffffff;
-  overflow: hidden;
+  overflow-y: auto;
 
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 24px 32px;
+    padding: 20px 32px;
     border-bottom: 1px solid #e5e7eb;
     background: #ffffff;
   }
@@ -63,7 +63,7 @@
   }
 
   &__upload-section {
-    padding: 24px 32px;
+    padding: 20px 32px;
     border-bottom: 1px solid #e5e7eb;
     background: #f9fafb;
   }
@@ -71,7 +71,7 @@
   &__content {
     flex: 1;
     overflow-y: auto;
-    padding: 24px 32px;
+    padding: 20px 32px;
   }
 }
 
