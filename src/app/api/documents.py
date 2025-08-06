@@ -20,6 +20,38 @@ QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "upload_files"))
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+def format_file_size(size_bytes: Optional[int]) -> str:
+    """
+    Format file size in bytes to human-readable format.
+    """
+    if size_bytes is None:
+        return "Unknown"
+    
+    if size_bytes == 0:
+        return "0 B"
+    
+    size_names = ["B", "KB", "MB", "GB", "TB"]
+    i = 0
+    while size_bytes >= 1024 and i < len(size_names) - 1:
+        size_bytes = size_bytes / 1024.0
+        i += 1
+    
+    if i == 0:
+        return f"{int(size_bytes)} {size_names[i]}"
+    else:
+        return f"{size_bytes:.1f} {size_names[i]}"
+
+def get_file_size(file_path: str) -> Optional[int]:
+    """
+    Get file size in bytes. Returns None if file doesn't exist.
+    """
+    try:
+        if os.path.exists(file_path):
+            return os.path.getsize(file_path)
+    except (OSError, IOError):
+        pass
+    return None
+
 # Request Models
 class PreprocessRequest(BaseModel):
     """Request model for preprocessing documents"""
@@ -53,6 +85,8 @@ class DocumentResponse(BaseModel):
     department: Optional[str]
     client: Optional[str]
     file_path: str
+    file_size: Optional[int]  # file size in bytes
+    file_size_formatted: Optional[str]  # human-readable file size
     created_at: Optional[str]
     processed: bool
 
@@ -65,6 +99,8 @@ class DocumentDetailResponse(BaseModel):
     client: Optional[str]
     file_path: str
     file_exists: bool
+    file_size: Optional[int]  # file size in bytes
+    file_size_formatted: Optional[str]  # human-readable file size
     created_at: Optional[str]
     processed: bool
 
@@ -171,6 +207,7 @@ async def upload_file(
                 department=department,
                 client=client,
                 pointer_to_loc=str(file_path),
+                file_size=len(contents),  # Save file size in bytes
                 processed=False
             )
             session.add(document)
@@ -222,7 +259,7 @@ async def list_documents():
     List all documents with metadata from database.
     
     Returns a list of all uploaded documents with their metadata, 
-    processing status, and file information.
+    processing status, and file information including size.
     """
     try:
         with get_session() as session:
@@ -231,6 +268,11 @@ async def list_documents():
             
             documents_list = []
             for doc in documents:
+                # Get file size from database or from filesystem
+                file_size = doc.file_size
+                if file_size is None and doc.pointer_to_loc:
+                    file_size = get_file_size(doc.pointer_to_loc)
+                
                 documents_list.append(DocumentResponse(
                     id=doc.id,
                     filename=doc.filename,
@@ -238,6 +280,8 @@ async def list_documents():
                     department=doc.department,
                     client=doc.client,
                     file_path=doc.pointer_to_loc,
+                    file_size=file_size,
+                    file_size_formatted=format_file_size(file_size),
                     created_at=doc.created_at.isoformat() if doc.created_at else None,
                     processed=doc.processed
                 ))
@@ -302,8 +346,12 @@ async def get_document(document_id: int):
             
             # Check if file exists
             file_exists = False
+            file_size = document.file_size
             if document.pointer_to_loc:
                 file_exists = Path(document.pointer_to_loc).exists()
+                # If file size not in DB, get it from filesystem
+                if file_size is None and file_exists:
+                    file_size = get_file_size(document.pointer_to_loc)
             
             return DocumentDetailResponse(
                 id=document.id,
@@ -313,6 +361,8 @@ async def get_document(document_id: int):
                 client=document.client,
                 file_path=document.pointer_to_loc,
                 file_exists=file_exists,
+                file_size=file_size,
+                file_size_formatted=format_file_size(file_size),
                 created_at=document.created_at.isoformat() if document.created_at else None,
                 processed=document.processed
             )
@@ -610,6 +660,7 @@ async def upload_file_async(
                 department=department,
                 client=client,
                 pointer_to_loc=str(file_path),
+                file_size=len(contents),  # Save file size in bytes
                 processed=False
             )
             session.add(document)

@@ -131,7 +131,7 @@ const transformBackendFile = (backendFile: any): File => {
     id: String(backendFile.id), // Convert number to string
     name: backendFile.filename || 'Unknown',
     originalName: backendFile.filename || 'Unknown',
-    size: 0, // Backend doesn't provide size in this endpoint
+    size: backendFile.file_size || 0, // Use real file size from backend
     type: 'application/pdf', // Default type, backend doesn't provide this
     uploadDate: backendFile.created_at || new Date().toISOString(),
     isPublic: backendFile.confidentiality === 'public',
