@@ -1,10 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useFile } from '../../contexts/FileContext';
-import { ProcessingStatus } from '../../types';
+import { ProcessingStatus, ProcessingPhase } from '../../types';
 import { 
   FileWithProgress, 
-  simulateFileProcessing, 
-  getProcessingPhaseLabel 
+  getProcessingPhaseLabel
 } from '../../mock/fileUploadMocks';
 import './FileUpload.scss';
 
@@ -13,7 +12,7 @@ interface FileUploadProps {
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ onClose }) => {
-  const { uploadFile } = useFile();
+  const { uploadFile, getProcessingStatus, loadFiles } = useFile();
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileWithProgress[]>([]);
   const [privacySetting, setPrivacySetting] = useState<'public' | 'confidential'>('public');
@@ -100,31 +99,38 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose }) => {
         const currentIndex = typeof index === 'number' ? index : i;
         const fileWithProgress = selectedFiles[currentIndex];
         
+        // Start upload
         setSelectedFiles(prev => prev.map((f, idx) => 
           idx === currentIndex ? { 
             ...f, 
             status: ProcessingStatus.PROCESSING,
-            processingPhase: 'upload'
+            processingPhase: 'upload',
+            progress: 0
           } : f
         ));
 
-        // Simulate file processing phases
-        await simulateFileProcessing(currentIndex, setSelectedFiles);
-
-        // Upload file - convert browser File to our File type
-        const { file } = fileWithProgress;
-        await uploadFile(file, privacySetting === 'confidential');
-        
-        setSelectedFiles(prev => prev.map((f, idx) => 
-          idx === currentIndex ? { 
-            ...f, 
-            status: ProcessingStatus.COMPLETED,
-            processingPhase: undefined,
-            progress: 100
-          } : f
-        ));
+        try {
+          // Upload file and get task_id
+          const { file } = fileWithProgress;
+          const taskId = await uploadFile(file, privacySetting === 'confidential');
+          
+          // Start polling for progress
+          await trackProcessingProgress(taskId, currentIndex);
+          
+        } catch (uploadError) {
+          console.error('Upload failed for file:', fileWithProgress.file.name, uploadError);
+          setSelectedFiles(prev => prev.map((f, idx) => 
+            idx === currentIndex ? { 
+              ...f, 
+              status: ProcessingStatus.FAILED,
+              error: 'Upload failed. Click to retry.',
+              processingPhase: undefined
+            } : f
+          ));
+        }
       }
 
+      // Close dialog after all files processed
       setTimeout(() => {
         onClose();
         setSelectedFiles([]);
@@ -132,18 +138,89 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose }) => {
       }, 1000);
 
     } catch (error) {
-      console.error('Upload failed:', error);
-      const currentIndex = typeof index === 'number' ? index : selectedFiles.length - 1;
-      setSelectedFiles(prev => prev.map((f, idx) => 
-        idx === currentIndex ? { 
-          ...f, 
-          status: ProcessingStatus.FAILED, 
-          error: 'Processing failed. Click to retry.',
-          processingPhase: undefined
-        } : f
-      ));
+      console.error('Upload batch failed:', error);
       setIsUploading(false);
     }
+  };
+
+  // New function to track processing progress
+  const trackProcessingProgress = async (taskId: number, fileIndex: number) => {
+    const pollInterval = 1000; // Poll every second
+    const maxAttempts = 300; // 5 minutes max
+    let attempts = 0;
+
+    const poll = async (): Promise<void> => {
+      try {
+        attempts++;
+        const statusResponse = await getProcessingStatus(taskId);
+        
+        if (!statusResponse.success || !statusResponse.data) {
+          throw new Error(statusResponse.message || 'Failed to get status');
+        }
+
+        const progress = statusResponse.data;
+        
+        // Update file progress based on backend status
+        setSelectedFiles(prev => prev.map((f, idx) => {
+          if (idx !== fileIndex) return f;
+          
+          return {
+            ...f,
+            progress: progress.progress_percentage,
+            processingPhase: getProcessingPhaseFromStatus(progress.status, progress.current_step),
+            status: progress.status === 'completed' 
+              ? ProcessingStatus.COMPLETED 
+              : progress.status === 'failed'
+              ? ProcessingStatus.FAILED
+              : ProcessingStatus.PROCESSING,
+            error: progress.error_message || undefined
+          };
+        }));
+
+        // Check if processing is complete
+        if (progress.status === 'completed') {
+          console.log('Processing completed for task:', taskId);
+          // Reload file list to show the new file
+          await loadFiles();
+          return;
+        }
+        
+        if (progress.status === 'failed') {
+          console.error('Processing failed for task:', taskId, progress.error_message);
+          return;
+        }
+
+        // Continue polling if not complete and within limits
+        if (attempts < maxAttempts) {
+          setTimeout(poll, pollInterval);
+        } else {
+          throw new Error('Processing timeout - took too long');
+        }
+        
+      } catch (error) {
+        console.error('Error polling status for task:', taskId, error);
+        setSelectedFiles(prev => prev.map((f, idx) => 
+          idx === fileIndex ? { 
+            ...f, 
+            status: ProcessingStatus.FAILED,
+            error: 'Failed to track progress. File may still be processing.',
+            processingPhase: undefined
+          } : f
+        ));
+      }
+    };
+
+    // Start polling
+    await poll();
+  };
+
+  // Helper function to map backend status to frontend processing phase
+  const getProcessingPhaseFromStatus = (status: string, currentStep: string | null): ProcessingPhase => {
+    if (status === 'uploading' || currentStep === 'File Upload') return 'upload';
+    if (status === 'extracting' || currentStep === 'Text Extraction') return 'text_extraction';
+    if (status === 'chunking' || currentStep === 'Chunking') return 'chunking';
+    if (status === 'vectorizing' || currentStep === 'Vectorization') return 'vectorization';
+    return 'upload'; // default
   };
 
   const formatFileSize = (bytes: number): string => {

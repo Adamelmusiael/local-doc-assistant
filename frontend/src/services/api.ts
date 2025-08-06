@@ -7,7 +7,8 @@ import {
   ApiResponse,
   SendMessageRequest,
   SendMessageResponse,
-  UploadFileResponse,
+  AsyncUploadResponse,
+  ProcessingStatusResponse,
 } from '../types';
 
 const apiClient = axios.create({
@@ -37,14 +38,20 @@ export const chatAPI = {
 
 // --- File Operations ---
 export const fileAPI = {
-  // Upload a file (with privacy settings)
-  uploadFile: async (file: File, isConfidential: boolean): Promise<ApiResponse<UploadFileResponse>> => {
+  // Upload a file with async processing and progress tracking
+  uploadFile: async (file: File, isConfidential: boolean): Promise<AsyncUploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('confidentiality', String(isConfidential));
-    const response = await apiClient.post(`/docs/upload_file`, formData, {
+    formData.append('confidentiality', isConfidential ? 'confidential' : 'public');
+    const response = await apiClient.post(`/docs/upload_file_async`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return response.data;
+  },
+
+  // Get processing status for a task
+  getProcessingStatus: async (taskId: number): Promise<ProcessingStatusResponse> => {
+    const response = await apiClient.get(`/docs/processing/${taskId}/status`);
     return response.data;
   },
 

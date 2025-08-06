@@ -349,9 +349,10 @@ def delete_all_documents_and_chunks():
 @router.delete("/{document_id}", response_model=DeleteDocumentResponse)
 async def delete_document(document_id: int):
     """
-    Delete specific document by ID (both file and database record).
+    Delete specific document by ID (file, database record, processing tasks, and chunks).
     
-    Removes the document file from storage and deletes the database record.
+    Removes the document file from storage, deletes the database record,
+    removes all associated processing tasks, and removes all chunks/vectors from Qdrant.
     """
     try:
         with get_session() as session:
@@ -368,12 +369,38 @@ async def delete_document(document_id: int):
                     file_path.unlink()
                     file_deleted = True
             
+            # Delete associated processing tasks
+            processing_tasks = session.exec(
+                select(FileProcessingTask).where(FileProcessingTask.document_id == document_id)
+            ).all()
+            for task in processing_tasks:
+                session.delete(task)
+            
+            # Delete chunks/vectors from Qdrant
+            chunks_deleted = False
+            try:
+                client = QdrantClient(QDRANT_URL)
+                client.delete(
+                    collection_name="documents",
+                    wait=True,
+                    filter={
+                        "must": [
+                            {"key": "document_id", "match": {"value": document_id}}
+                        ]
+                    }
+                )
+                chunks_deleted = True
+                print(f"Deleted chunks for document_id={document_id} from Qdrant")
+            except Exception as chunk_error:
+                print(f"Warning: Failed to delete chunks for document {document_id}: {chunk_error}")
+                # Continue with document deletion even if chunk deletion fails
+            
             # Delete database record
             session.delete(document)
             session.commit()
             
             return DeleteDocumentResponse(
-                message="Document deleted successfully",
+                message=f"Document deleted successfully (including {len(processing_tasks)} processing tasks{'and chunks' if chunks_deleted else ', chunks deletion failed'})",
                 document_id=document_id,
                 filename=document.filename,
                 file_deleted=file_deleted,

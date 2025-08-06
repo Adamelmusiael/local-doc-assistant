@@ -1,6 +1,4 @@
-import { ProcessingStatus } from '../types';
-
-export type ProcessingPhase = 'upload' | 'text_extraction' | 'chunking' | 'vectorization';
+import { ProcessingStatus, ProcessingPhase } from '../types';
 
 export interface FileWithProgress {
   file: File;

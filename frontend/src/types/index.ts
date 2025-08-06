@@ -44,6 +44,8 @@ export enum ProcessingStatus {
   FAILED = "failed"
 }
 
+export type ProcessingPhase = 'upload' | 'text_extraction' | 'chunking' | 'vectorization';
+
 // File chunk interface
 export interface FileChunk {
   id: string;
@@ -140,6 +142,38 @@ export interface UploadFileRequest {
 export interface UploadFileResponse {
   file: File;
   processingStatus: ProcessingStatus;
+}
+
+// Async Upload API interfaces
+export interface AsyncUploadResponse {
+  message: string;
+  document_id: number;
+  task_id: number;
+  filename: string;
+  status: string;
+  progress_endpoint: string;
+}
+
+export interface ProcessingProgress {
+  task_id: number;
+  document_id: number;
+  status: string;
+  current_step: string | null;
+  progress_percentage: number;
+  error_message: string | null;
+  started_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  upload_progress: number;
+  extraction_progress: number;
+  chunking_progress: number;
+  vectorization_progress: number;
+}
+
+export interface ProcessingStatusResponse {
+  success: boolean;
+  data: ProcessingProgress | null;
+  message: string;
 }
 
 // Settings interface

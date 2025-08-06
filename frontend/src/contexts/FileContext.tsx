@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { File, ProcessingStatus } from '../types';
+import { File, ProcessingStatus, ProcessingStatusResponse } from '../types';
 import { fileAPI } from '../services/api';
 
 // State interface for file context
@@ -111,7 +111,8 @@ interface FileContextType {
   dispatch: React.Dispatch<FileAction>;
   // Convenience methods
   loadFiles: () => Promise<void>; // New method to load files from API
-  uploadFile: (file: globalThis.File, isConfidential: boolean) => Promise<void>; // Use native File type
+  uploadFile: (file: globalThis.File, isConfidential: boolean) => Promise<number>; // Returns task_id for tracking
+  getProcessingStatus: (taskId: number) => Promise<ProcessingStatusResponse>; // Get processing progress
   deleteFile: (fileId: string) => Promise<void>;
   getFile: (fileId: string) => File | undefined;
   getFilesByStatus: (status: ProcessingStatus) => File[];
@@ -198,22 +199,23 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
   }, []);
 
   // Convenience methods
-  const uploadFile = async (fileToUpload: globalThis.File, isConfidential: boolean) => {
+  const uploadFile = async (fileToUpload: globalThis.File, isConfidential: boolean): Promise<number> => {
     try {
       console.log('Uploading file:', fileToUpload.name);
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
       
-      // Call real API instead of mock
+      // Call async upload API
       const response = await fileAPI.uploadFile(fileToUpload, isConfidential);
-      console.log('File uploaded successfully:', response);
+      console.log('File uploaded successfully, task_id:', response.task_id);
       
-      // Reload files to get the updated list from backend
-      await loadFiles();
+      // Return task_id for progress tracking
+      return response.task_id;
       
     } catch (error) {
       console.error('File upload failed:', error);
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Upload failed' });
+      throw error;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -279,10 +281,20 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     }
   };
 
+  const getProcessingStatus = async (taskId: number): Promise<ProcessingStatusResponse> => {
+    try {
+      return await fileAPI.getProcessingStatus(taskId);
+    } catch (error) {
+      console.error('Failed to get processing status:', error);
+      throw error;
+    }
+  };
+
   const value: FileContextType = {
     state,
     dispatch,
     uploadFile,
+    getProcessingStatus,
     deleteFile,
     loadFiles,
     getFile,
