@@ -54,6 +54,11 @@ If you want to run locally:
   ```sh
   uvicorn src.app.main:app --reload
   ```
+  Run frontend (backend need to be running first!):
+  ```sh
+  cd frontend
+  npm run dev
+  ```
 ---
 
 ## Documentation

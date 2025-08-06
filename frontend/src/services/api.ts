@@ -2,7 +2,6 @@ import axios from 'axios';
 import {
   ChatMessage,
   Chat,
-  File as FileType,
   Model,
   SearchMode,
   ApiResponse,

@@ -240,7 +240,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose }) => {
                 Public
               </span>
               <span className="file-upload__privacy-description">
-                File will be available for all users
+                File will be available for all models
               </span>
             </label>
             <label className="file-upload__privacy-option">
@@ -258,7 +258,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose }) => {
                 Confidential
               </span>
               <span className="file-upload__privacy-description">
-                File will only be available to you
+                File will only be available only for local models
               </span>
             </label>
           </div>

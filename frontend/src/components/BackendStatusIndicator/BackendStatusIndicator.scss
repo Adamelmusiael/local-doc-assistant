@@ -1,0 +1,95 @@
+.backend-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  &__dot {
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.3s ease;
+
+    &--healthy {
+      background-color: #10b981; // Green
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+
+    &--unhealthy {
+      background-color: #ef4444; // Red
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    }
+
+    &--checking {
+      background-color: #f59e0b; // Amber
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    }
+  }
+
+  &__pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: inherit;
+    animation: pulse 1.5s infinite;
+    opacity: 0.6;
+  }
+
+  // Size variations
+  &--small {
+    .backend-status-indicator__dot {
+      width: 8px;
+      height: 8px;
+    }
+  }
+
+  &--medium {
+    .backend-status-indicator__dot {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  &--large {
+    .backend-status-indicator__dot {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+// Hover effects
+.backend-status-indicator:hover {
+  .backend-status-indicator__dot {
+    transform: scale(1.1);
+    
+    &--healthy {
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+    }
+
+    &--unhealthy {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+    }
+
+    &--checking {
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+    }
+  }
+}

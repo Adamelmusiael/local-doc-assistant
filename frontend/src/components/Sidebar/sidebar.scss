@@ -65,6 +65,15 @@
       color: #111827;
       font-weight: 600;
     }
+
+    &--status {
+      cursor: default;
+      
+      &:hover {
+        background: #f8fafc;
+        color: #374151;
+      }
+    }
   }
 
   &__nav-icon {
