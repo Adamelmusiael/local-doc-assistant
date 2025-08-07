@@ -66,8 +66,12 @@ const Sidebar: React.FC = () => {
     navigate('/');
   };
 
-  const handleChatRename = (chatId: string, newTitle: string) => {
-    updateChat(chatId, { title: newTitle });
+  const handleChatRename = async (chatId: string, newTitle: string) => {
+    try {
+      await updateChat(chatId, { title: newTitle });
+    } catch (error) {
+      console.error('Failed to rename chat:', error);
+    }
   };
 
   const handleChatDelete = async (chatId: string) => {

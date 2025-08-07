@@ -182,7 +182,7 @@ interface ChatContextType {
   sendMessage: (content: string) => void;
   updateMessage: (messageId: string, content: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
-  updateChat: (chatId: string, updates: Partial<Chat>) => void;
+  updateChat: (chatId: string, updates: Partial<Chat>) => Promise<void>;
   setSearchMode: (mode: SearchMode) => void;
   addSelectedFile: (fileId: string) => void;
   removeSelectedFile: (fileId: string) => void;
@@ -290,11 +290,28 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
   };
 
-  const updateChat = (chatId: string, updates: Partial<Chat>) => {
+  const updateChat = async (chatId: string, updates: Partial<Chat>) => {
     const chat = state.chats.find(c => c.id === chatId);
-    if (chat) {
+    if (!chat) return;
+
+    try {
+      // If title is being updated, call backend to persist the change
+      if (updates.title && updates.title !== chat.title) {
+        await chatService.updateSessionTitle(chatId, updates.title);
+      }
+      
+      // Update local state
       const updatedChat = { ...chat, ...updates, updatedAt: new Date().toISOString() };
       dispatch({ type: 'UPDATE_CHAT', payload: updatedChat });
+    } catch (error) {
+      console.error('Error updating chat:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to update chat' });
+      
+      // Revert the title change in case of backend error
+      if (updates.title) {
+        const revertedChat = { ...chat, updatedAt: new Date().toISOString() };
+        dispatch({ type: 'UPDATE_CHAT', payload: revertedChat });
+      }
     }
   };
 

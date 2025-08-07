@@ -142,8 +142,12 @@ export const chatService = {
   },
 
   // Update session title (backend doesn't have this endpoint yet, so we'll skip for now)
-  updateSessionTitle: async (_sessionId: string, _newTitle: string): Promise<void> => {
-    // TODO: Implement when backend has update endpoint
-    console.warn('Session title update not implemented in backend yet');
+  updateSessionTitle: async (sessionId: string, newTitle: string): Promise<void> => {
+    try {
+      await chatAPI.updateSession(sessionId, { title: newTitle });
+    } catch (error) {
+      console.error('Failed to update session title:', error);
+      throw error;
+    }
   }
 };
