@@ -2,8 +2,8 @@ import ChatInput from "./ChatInput";
 import "./ChatDialog.scss";
 import { useState } from "react";
 import ChatMessage from "./ChatMessage";
-import { ChatMessage as ChatMessageType, SearchMode } from "../../types";
-import { mockMessages, simulateChatResponse } from "../../mock/chatMocks";
+import { SearchMode } from "../../types";
+import { useChat } from "../../contexts/ChatContext";
 
 interface ChatDialogProps {
   selectedModel: string;
@@ -11,31 +11,33 @@ interface ChatDialogProps {
 }
 
 const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) => {
-  const [messages, setMessages] = useState<ChatMessageType[]>(mockMessages);
+  const { state: chatState, sendMessage } = useChat();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = async (message: string, model: string, searchMode: SearchMode, attachments?: File[]) => {
-    // Add user message
-    const userMessage: ChatMessageType = {
-      id: Date.now().toString(),
-      content: message,
-      role: 'user',
-      timestamp: new Date().toISOString(),
-      attachments: attachments?.map((file, index) => ({
-        id: `att_${Date.now()}_${index}`,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        fileId: `file_${Date.now()}_${index}`
-      }))
-    };
+  // Get current chat messages
+  const messages = chatState.currentChat?.messages || [];
 
-    setMessages(prev => [...prev, userMessage]);
+  const handleSendMessage = async (message: string, _model: string, _searchMode: SearchMode, _attachments?: File[]) => {
+    // Use the chat context to send the message
+    sendMessage(message);
+    
+    // TODO: In the next iteration, we'll add actual AI response generation
+    // For now, we're just storing the user message
     setIsLoading(true);
-
+    
     try {
-      const assistantMessage = await simulateChatResponse(message, model, searchMode, attachments);
-      setMessages(prev => [...prev, assistantMessage]);
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // TODO: Call backend API to generate AI response
+      // const response = await chatAPI.sendMessage({
+      //   chatId: chatState.currentChat?.id || '',
+      //   question: message,
+      //   model,
+      //   searchMode,
+      //   selectedDocumentIds: attachments?.map(f => f.name) // placeholder
+      // });
+      
     } catch (error) {
       console.error('Chat response failed:', error);
     } finally {
@@ -46,20 +48,34 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) =>
   return (
     <div className="chat-dialog">
       <div className="chat-dialog__messages">
-        {messages.map((message) => (
-          <ChatMessage 
-            key={message.id} 
-            message={message}
-          />
-        ))}
+        {!chatState.currentChat ? (
+          <div className="chat-dialog__no-chat">
+            <h3>No chat selected</h3>
+            <p>Select a chat from the sidebar or create a new one to start chatting.</p>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="chat-dialog__no-messages">
+            <h3>Start the conversation</h3>
+            <p>Send a message to begin chatting with the AI assistant.</p>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <ChatMessage 
+              key={message.id} 
+              message={message}
+            />
+          ))
+        )}
       </div>
-      <ChatInput 
-        selectedModel={selectedModel}
-        searchMode={searchMode}
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
-        maxLength={4000}
-      />
+      {chatState.currentChat && (
+        <ChatInput 
+          selectedModel={selectedModel}
+          searchMode={searchMode}
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+          maxLength={4000}
+        />
+      )}
     </div>
   );
 };

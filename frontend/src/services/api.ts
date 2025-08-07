@@ -1,7 +1,6 @@
 import axios from 'axios';
 import {
   ChatMessage,
-  Chat,
   Model,
   SearchMode,
   ApiResponse,
@@ -23,15 +22,39 @@ export const chatAPI = {
     return response.data;
   },
 
-  // Get chat history for a specific chat session
-  getHistory: async (chatId: string): Promise<ApiResponse<Chat>> => {
-    const response = await apiClient.get(`/chat/chat_sessions/${chatId}`);
+  // Get chat session details
+  getSession: async (sessionId: string): Promise<any> => {
+    const response = await apiClient.get(`/chat/chat_sessions/${sessionId}`);
+    return response.data;
+  },
+
+  // Get chat messages for a specific session
+  getMessages: async (sessionId: string): Promise<any> => {
+    const response = await apiClient.get(`/chat/${sessionId}/messages`);
     return response.data;
   },
 
   // List all chat sessions
-  listChats: async (): Promise<ApiResponse<Chat[]>> => {
+  listSessions: async (): Promise<any> => {
     const response = await apiClient.get(`/chat/chat_sessions`);
+    return response.data;
+  },
+
+  // Create new chat session
+  createSession: async (title: string, model: string = 'mistral'): Promise<any> => {
+    const response = await apiClient.post(`/chat/chat_sessions`, {
+      title,
+      llm_model: model,
+      user_id: 'user', // Default user ID for now
+      status: 'active',
+      session_metadata: null
+    });
+    return response.data;
+  },
+
+  // Delete chat session
+  deleteSession: async (sessionId: string): Promise<any> => {
+    const response = await apiClient.delete(`/chat/chat_sessions/${sessionId}`);
     return response.data;
   },
 };

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { Chat, ChatMessage, SearchMode } from '../types';
+import { chatService } from '../services/chatService';
 
 // State interface for chat context
 interface ChatState {
@@ -25,59 +26,14 @@ type ChatAction =
   | { type: 'SET_SEARCH_MODE'; payload: SearchMode }
   | { type: 'SET_SELECTED_FILES'; payload: string[] }
   | { type: 'ADD_SELECTED_FILE'; payload: string }
-  | { type: 'REMOVE_SELECTED_FILE'; payload: string };
+  | { type: 'REMOVE_SELECTED_FILE'; payload: string }
+  | { type: 'LOAD_CHATS_START' }
+  | { type: 'LOAD_CHATS_SUCCESS'; payload: Chat[] }
+  | { type: 'LOAD_CHATS_ERROR'; payload: string };
 
-// Initial state
+// Initial state (empty, will be loaded from backend)
 const initialState: ChatState = {
-  chats: [
-    {
-      id: '1',
-      title: 'Project Discussion',
-      messages: [
-        {
-          id: '1',
-          content: 'Hello! I need help with my React project.',
-          role: 'user',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          id: '2',
-          content: 'I\'d be happy to help you with your React project! What specific issues are you facing?',
-          role: 'assistant',
-          timestamp: new Date(Date.now() - 3500000).toISOString(),
-        }
-      ],
-      model: 'mistral',
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      updatedAt: new Date(Date.now() - 3500000).toISOString(),
-      isActive: true,
-    },
-    {
-      id: '2',
-      title: 'Code Review',
-      messages: [
-        {
-          id: '3',
-          content: 'Can you review this TypeScript code?',
-          role: 'user',
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
-        }
-      ],
-      model: 'mistral',
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-      updatedAt: new Date(Date.now() - 7200000).toISOString(),
-      isActive: true,
-    },
-    {
-      id: '3',
-      title: 'API Integration',
-      messages: [],
-      model: 'mistral',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000).toISOString(),
-      isActive: true,
-    }
-  ],
+  chats: [],
   currentChat: null,
   isLoading: false,
   error: null,
@@ -88,14 +44,29 @@ const initialState: ChatState = {
 // Reducer function
 const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
   switch (action.type) {
+    case 'LOAD_CHATS_START':
+      return { ...state, isLoading: true, error: null };
+    
+    case 'LOAD_CHATS_SUCCESS':
+      return { 
+        ...state, 
+        isLoading: false, 
+        error: null,
+        chats: action.payload,
+        currentChat: action.payload.length > 0 ? action.payload[0] : null
+      };
+    
+    case 'LOAD_CHATS_ERROR':
+      return { ...state, isLoading: false, error: action.payload };
+
     case 'SET_CHATS':
       return { ...state, chats: action.payload };
     
     case 'ADD_CHAT':
-      return { 
-        ...state, 
+      return {
+        ...state,
         chats: [action.payload, ...state.chats],
-        currentChat: action.payload 
+        currentChat: action.payload
       };
     
     case 'UPDATE_CHAT':
@@ -205,11 +176,12 @@ interface ChatContextType {
   state: ChatState;
   dispatch: React.Dispatch<ChatAction>;
   // Convenience methods
-  createChat: (title: string, model: string) => void;
+  loadChats: () => Promise<void>;
+  createChat: (title: string, model: string) => Promise<void>;
   selectChat: (chatId: string) => void;
   sendMessage: (content: string) => void;
   updateMessage: (messageId: string, content: string) => void;
-  deleteChat: (chatId: string) => void;
+  deleteChat: (chatId: string) => Promise<void>;
   updateChat: (chatId: string, updates: Partial<Chat>) => void;
   setSearchMode: (mode: SearchMode) => void;
   addSelectedFile: (fileId: string) => void;
@@ -228,18 +200,32 @@ interface ChatProviderProps {
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
-  // Convenience methods
-  const createChat = (title: string, model: string) => {
-    const newChat: Chat = {
-      id: Date.now().toString(),
-      title,
-      messages: [],
-      model,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isActive: true,
-    };
-    dispatch({ type: 'ADD_CHAT', payload: newChat });
+  // Load chats from backend on mount
+  React.useEffect(() => {
+    loadChats();
+  }, []);
+
+  // Load all chats from backend
+  const loadChats = async () => {
+    dispatch({ type: 'LOAD_CHATS_START' });
+    try {
+      const chats = await chatService.loadAllSessions();
+      dispatch({ type: 'LOAD_CHATS_SUCCESS', payload: chats });
+    } catch (error) {
+      dispatch({ type: 'LOAD_CHATS_ERROR', payload: 'Failed to load chat sessions' });
+      console.error('Error loading chats:', error);
+    }
+  };
+
+  // Create new chat
+  const createChat = async (title: string, model: string) => {
+    try {
+      const newChat = await chatService.createNewSession(title, model);
+      dispatch({ type: 'ADD_CHAT', payload: newChat });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to create chat session' });
+      console.error('Error creating chat:', error);
+    }
   };
 
   const selectChat = (chatId: string) => {
@@ -294,8 +280,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     });
   };
 
-  const deleteChat = (chatId: string) => {
-    dispatch({ type: 'DELETE_CHAT', payload: chatId });
+  const deleteChat = async (chatId: string) => {
+    try {
+      await chatService.deleteSession(chatId);
+      dispatch({ type: 'DELETE_CHAT', payload: chatId });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete chat session' });
+      console.error('Error deleting chat:', error);
+    }
   };
 
   const updateChat = (chatId: string, updates: Partial<Chat>) => {
@@ -325,6 +317,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const value: ChatContextType = {
     state,
     dispatch,
+    loadChats,
     createChat,
     selectChat,
     sendMessage,

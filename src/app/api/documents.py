@@ -509,6 +509,7 @@ def preprocess_documents(request: PreprocessRequest):
                     raise HTTPException(status_code=404, detail=f"Metadata for file {filename} not found in database")
                 metadata = {
                     "document_id": document.id,
+                    "filename": document.filename,
                     "file_path": document.pointer_to_loc,
                     "confidentiality": document.confidentiality,
                     "department": document.department,
@@ -681,6 +682,7 @@ async def upload_file_async(
             # Start background processing
             metadata = {
                 "document_id": document.id,
+                "filename": file.filename,
                 "confidentiality": confidentiality,
                 "department": department,
                 "client": client

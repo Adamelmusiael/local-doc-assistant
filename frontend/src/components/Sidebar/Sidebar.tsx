@@ -50,10 +50,14 @@ const Sidebar: React.FC = () => {
   const [isChatsExpanded, setIsChatsExpanded] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
     const defaultModel = userState.selectedModel || userState.preferences?.defaultModel || 'mistral';
-    createChat('New Chat', defaultModel);
-    navigate('/');
+    try {
+      await createChat('New Chat', defaultModel);
+      navigate('/');
+    } catch (error) {
+      console.error('Failed to create new chat:', error);
+    }
   };
 
   const handleChatSelect = (chatId: string) => {
@@ -66,8 +70,12 @@ const Sidebar: React.FC = () => {
     updateChat(chatId, { title: newTitle });
   };
 
-  const handleChatDelete = (chatId: string) => {
-    deleteChat(chatId);
+  const handleChatDelete = async (chatId: string) => {
+    try {
+      await deleteChat(chatId);
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+    }
   };
 
   return (
@@ -134,7 +142,16 @@ const Sidebar: React.FC = () => {
         
         {isChatsExpanded && (
           <div className="sidebar__chats-list">
-            {chatState.chats.length === 0 ? (
+            {chatState.isLoading ? (
+              <div className="sidebar__no-chats">
+                <p>Loading chats...</p>
+              </div>
+            ) : chatState.error ? (
+              <div className="sidebar__no-chats">
+                <p>Error loading chats</p>
+                <p>{chatState.error}</p>
+              </div>
+            ) : chatState.chats.length === 0 ? (
               <div className="sidebar__no-chats">
                 <p>No chats yet</p>
                 <p>Start a new conversation!</p>
