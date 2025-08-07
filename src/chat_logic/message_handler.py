@@ -252,7 +252,7 @@ async def handle_chat_message_stream(
         # Send sources info
         yield {
             "type": "sources",
-            "content": extract_sources(top_chunks),
+            "sources": extract_sources(top_chunks),
             "chunks_used": len(top_chunks)
         }
         

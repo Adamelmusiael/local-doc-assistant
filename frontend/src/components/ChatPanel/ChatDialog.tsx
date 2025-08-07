@@ -1,9 +1,9 @@
 import ChatInput from "./ChatInput";
 import "./ChatDialog.scss";
-import { useState } from "react";
 import ChatMessage from "./ChatMessage";
 import { SearchMode } from "../../types";
 import { useChat } from "../../contexts/ChatContext";
+import { useFile } from "../../contexts/FileContext";
 
 interface ChatDialogProps {
   selectedModel: string;
@@ -12,37 +12,36 @@ interface ChatDialogProps {
 
 const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) => {
   const { state: chatState, sendMessage } = useChat();
-  const [isLoading, setIsLoading] = useState(false);
+  const { state: fileState } = useFile();
 
   // Get current chat messages
   const messages = chatState.currentChat?.messages || [];
 
+  // Check if any message is currently being generated
+  const isLoading = messages.some(msg => 
+    msg.status === 'pending' || 
+    msg.status === 'sending' || 
+    msg.status === 'streaming' || 
+    msg.isGenerating
+  );
+
   const handleSendMessage = async (message: string, _model: string, _searchMode: SearchMode, _attachments?: File[]) => {
-    // Use the chat context to send the message
-    sendMessage(message);
-    
-    // TODO: In the next iteration, we'll add actual AI response generation
-    // For now, we're just storing the user message
-    setIsLoading(true);
-    
-    try {
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // TODO: Call backend API to generate AI response
-      // const response = await chatAPI.sendMessage({
-      //   chatId: chatState.currentChat?.id || '',
-      //   question: message,
-      //   model,
-      //   searchMode,
-      //   selectedDocumentIds: attachments?.map(f => f.name) // placeholder
-      // });
-      
-    } catch (error) {
-      console.error('Chat response failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    // Get selected files from FileContext
+    const selectedFiles = fileState.files.filter(file => 
+      chatState.selectedFiles.includes(file.id)
+    );
+
+    // Convert to attachment format
+    const attachments = selectedFiles.map(file => ({
+      id: Date.now().toString() + Math.random(),
+      name: file.originalName || file.name,
+      type: file.type,
+      size: file.size,
+      fileId: file.id
+    }));
+
+    // Use the chat context to send the message with streaming
+    await sendMessage(message, attachments.length > 0 ? attachments : undefined);
   };
 
   return (

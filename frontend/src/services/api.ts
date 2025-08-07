@@ -16,10 +16,34 @@ const apiClient = axios.create({
 
 // --- Chat Operations ---
 export const chatAPI = {
-  // Send a message to the chat endpoint
+  // Send a message to the chat endpoint (non-streaming)
   sendMessage: async (data: SendMessageRequest): Promise<ApiResponse<SendMessageResponse>> => {
     const response = await apiClient.post(`/chat/${data.chatId}/message`, data);
     return response.data;
+  },
+
+  // Send a message with streaming response using fetch for SSE
+  sendMessageStream: async (data: SendMessageRequest): Promise<Response> => {
+    const response = await fetch(`http://localhost:8000/chat/${data.chatId}/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+      },
+      body: JSON.stringify({
+        question: data.message,
+        model: data.model,
+        selected_document_ids: data.attachments,
+        search_mode: data.searchMode
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response;
   },
 
   // Get chat session details

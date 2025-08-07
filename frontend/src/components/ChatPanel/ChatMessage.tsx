@@ -55,6 +55,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === 'user';
   const hasSources = message.sources && message.sources.length > 0;
   const hasAttachments = message.attachments && message.attachments.length > 0;
+  const hasError = message.status === 'error' && message.error;
+  const isStreaming = message.status === 'streaming' || message.isGenerating;
+  const isPending = message.status === 'pending' || message.status === 'sending';
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -71,12 +74,36 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     }
   };
 
+  const handleRetry = () => {
+    // TODO: Implement retry functionality
+    console.log('Retry message:', message.id);
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getStatusIndicator = () => {
+    switch (message.status) {
+      case 'pending':
+        return <span className="chat-message__status chat-message__status--pending">●</span>;
+      case 'sending':
+        return <span className="chat-message__status chat-message__status--sending">⏳</span>;
+      case 'sent':
+        return <span className="chat-message__status chat-message__status--sent">✓</span>;
+      case 'streaming':
+        return <span className="chat-message__status chat-message__status--streaming">⚡</span>;
+      case 'completed':
+        return <span className="chat-message__status chat-message__status--completed">✓</span>;
+      case 'error':
+        return <span className="chat-message__status chat-message__status--error">⚠</span>;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -93,11 +120,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           <span className="chat-message__timestamp">
             {formatTimestamp(message.timestamp)}
           </span>
+          {getStatusIndicator()}
         </div>
 
         <div className="chat-message__body">
           <div className="chat-message__text">
             {message.content}
+            {isStreaming && (
+              <span className="chat-message__typing-indicator">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </span>
+            )}
           </div>
         </div>
 
@@ -162,6 +197,28 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
                   <span className="chat-message__source-text">{source}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Error Display */}
+        {hasError && (
+          <div className="chat-message__error">
+            <div className="chat-message__error-content">
+              <span className="chat-message__error-icon">⚠️</span>
+              <div className="chat-message__error-text">
+                <div className="chat-message__error-title">Error</div>
+                <div className="chat-message__error-message">{message.error!.message}</div>
+              </div>
+              {message.error!.retryable && (
+                <button 
+                  className="chat-message__error-retry"
+                  onClick={handleRetry}
+                  title="Retry sending message"
+                >
+                  Retry
+                </button>
+              )}
             </div>
           </div>
         )}

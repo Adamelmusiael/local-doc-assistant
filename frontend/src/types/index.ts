@@ -8,6 +8,11 @@ export interface ChatMessage {
   attachments?: FileAttachment[];
   isEditing?: boolean;
   isGenerating?: boolean;
+  status?: "pending" | "sending" | "sent" | "streaming" | "completed" | "error";
+  error?: {
+    message: string;
+    retryable: boolean;
+  };
 }
 
 // Chat session interface

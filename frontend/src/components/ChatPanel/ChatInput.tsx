@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SearchMode } from '../../types';
+import { useChat } from '../../contexts/ChatContext';
+import { useFile } from '../../contexts/FileContext';
+import FileSelectionModal from './FileSelectionModal';
 
 // Icons
 const SendIcon = () => (
@@ -40,10 +43,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
   maxLength = 4000
 }) => {
   const [message, setMessage] = useState('');
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const [showFileModal, setShowFileModal] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  const { state: chatState } = useChat();
+  const { state: fileState } = useFile();
 
   const canSend = message.trim() && !isLoading;
+
+  // Get selected files info for display
+  const selectedFiles = fileState.files.filter(file => 
+    chatState.selectedFiles.includes(file.id)
+  );
 
   // Auto-resize textarea
   useEffect(() => {
@@ -56,9 +67,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (canSend && onSendMessage) {
-      onSendMessage(message.trim(), selectedModel, searchMode, attachments);
+      onSendMessage(message.trim(), selectedModel, searchMode);
       setMessage('');
-      setAttachments([]);
     }
   };
 
@@ -69,17 +79,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      setAttachments(prev => [...prev, ...files]);
-    }
-    // Reset input value to allow selecting the same file again
-    e.target.value = '';
-  };
-
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
+  const handleAttachClick = () => {
+    setShowFileModal(true);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -93,17 +94,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div className="chat-input">
       <form onSubmit={handleSubmit} className="chat-input__form">
-        {/* Attachments */}
-        {attachments.length > 0 && (
+        {/* Selected Files Display */}
+        {selectedFiles.length > 0 && (
           <div className="chat-input__attachments">
-            {attachments.map((file, index) => (
-              <div key={index} className="chat-input__attachment">
-                <span className="chat-input__attachment-name">{file.name}</span>
+            {selectedFiles.map((file) => (
+              <div key={file.id} className="chat-input__attachment">
+                <span className="chat-input__attachment-name">{file.originalName}</span>
                 <span className="chat-input__attachment-size">{formatFileSize(file.size)}</span>
                 <button
                   type="button"
-                  onClick={() => removeAttachment(index)}
+                  onClick={() => {/* Remove handled by modal */}}
                   className="chat-input__attachment-remove"
+                  title="Remove attachment"
                 >
                   ×
                 </button>
@@ -114,23 +116,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
         {/* Input Container */}
         <div className="chat-input__container">
-          <label className="chat-input__file-label">
-            <input
-              type="file"
-              multiple
-              onChange={handleFileAttach}
-              className="chat-input__file-input"
-              disabled={isLoading}
-            />
-            <button 
-              type="button" 
-              className="chat-input__attach-btn"
-              title="Attach files"
-              disabled={isLoading}
-            >
-              <AttachIcon />
-            </button>
-          </label>
+          <button 
+            type="button" 
+            className="chat-input__attach-btn"
+            title="Select files to attach"
+            disabled={isLoading}
+            onClick={handleAttachClick}
+          >
+            <AttachIcon />
+          </button>
           
           <div className="chat-input__textarea-wrapper">
             <textarea
@@ -156,6 +150,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
           </button>
         </div>
       </form>
+
+      {/* File Selection Modal */}
+      <FileSelectionModal 
+        isOpen={showFileModal}
+        onClose={() => setShowFileModal(false)}
+      />
     </div>
   );
 };

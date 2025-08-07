@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { Chat, ChatMessage, SearchMode } from '../types';
 import { chatService } from '../services/chatService';
+import { StreamingChatService, StreamChunk } from '../services/streamingService';
 
 // State interface for chat context
 interface ChatState {
@@ -179,7 +180,7 @@ interface ChatContextType {
   loadChats: () => Promise<void>;
   createChat: (title: string, model?: string) => Promise<void>;
   selectChat: (chatId: string) => void;
-  sendMessage: (content: string) => void;
+  sendMessage: (content: string, attachedFiles?: { id: string; name: string; type: string; size: number; fileId: string }[]) => void;
   updateMessage: (messageId: string, content: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   updateChat: (chatId: string, updates: Partial<Chat>) => Promise<void>;
@@ -234,32 +235,249 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_CURRENT_CHAT', payload: chat || null });
   };
 
-  const sendMessage = (content: string) => {
+  const sendMessage = async (content: string, attachedFiles?: { id: string; name: string; type: string; size: number; fileId: string }[]) => {
     if (!state.currentChat) return;
 
+    // Create user message with pending status
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content,
       role: 'user',
       timestamp: new Date().toISOString(),
-      attachments: state.selectedFiles.length > 0 
-        ? state.selectedFiles.map(fileId => ({
-            id: Date.now().toString(),
-            name: 'Attached file',
-            type: 'file',
-            size: 0,
-            fileId
-          }))
-        : undefined,
+      status: 'pending',
+      attachments: attachedFiles || undefined,
     };
 
+    // Add user message immediately to UI
     dispatch({ 
       type: 'ADD_MESSAGE', 
       payload: { chatId: state.currentChat.id, message: userMessage } 
     });
-    
+
     // Clear selected files after sending
     dispatch({ type: 'SET_SELECTED_FILES', payload: [] });
+
+    // Create assistant message placeholder
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      content: '',
+      role: 'assistant',
+      timestamp: new Date().toISOString(),
+      status: 'streaming',
+      isGenerating: true,
+    };
+
+    // Add assistant message placeholder
+    dispatch({
+      type: 'ADD_MESSAGE',
+      payload: { chatId: state.currentChat.id, message: assistantMessage }
+    });
+
+    // Start streaming
+    const streamingService = new StreamingChatService();
+    const currentChatId = state.currentChat.id;
+    let accumulatedContent = ''; // Track accumulated content
+    let accumulatedSources: string[] = [];
+
+    try {
+      // Update user message status to sending
+      dispatch({
+        type: 'UPDATE_MESSAGE',
+        payload: {
+          chatId: currentChatId,
+          messageId: userMessage.id,
+          message: { ...userMessage, status: 'sending' }
+        }
+      });
+
+      await streamingService.streamMessage(
+        {
+          message: content,
+          chatId: currentChatId,
+          model: state.currentChat.model || 'mistral',
+          searchMode: state.searchMode,
+          attachments: attachedFiles ? attachedFiles.map(f => f.fileId) : []
+        },
+        (chunk: StreamChunk) => {
+          // Handle streaming chunks
+          switch (chunk.type) {
+            case 'start':
+              // Mark user message as sent
+              dispatch({
+                type: 'UPDATE_MESSAGE',
+                payload: {
+                  chatId: currentChatId,
+                  messageId: userMessage.id,
+                  message: { ...userMessage, status: 'sent' }
+                }
+              });
+              break;
+
+            case 'chunk':
+              // Update assistant message with accumulated content
+              if (chunk.content) {
+                accumulatedContent += chunk.content;
+                
+                // Update immediately for better responsiveness (remove throttling for now)
+                dispatch({
+                  type: 'UPDATE_MESSAGE',
+                  payload: {
+                    chatId: currentChatId,
+                    messageId: assistantMessageId,
+                    message: {
+                      ...assistantMessage,
+                      content: accumulatedContent,
+                      status: 'streaming',
+                      isGenerating: true
+                    }
+                  }
+                });
+              }
+              break;
+
+            case 'sources':
+              // Update assistant message with sources
+              if (chunk.sources) {
+                accumulatedSources = chunk.sources.map(s => typeof s === 'string' ? s : s.text || '');
+                dispatch({
+                  type: 'UPDATE_MESSAGE',
+                  payload: {
+                    chatId: currentChatId,
+                    messageId: assistantMessageId,
+                    message: {
+                      ...assistantMessage,
+                      content: accumulatedContent,
+                      sources: accumulatedSources,
+                      status: 'streaming',
+                      isGenerating: true
+                    }
+                  }
+                });
+              }
+              break;
+
+            case 'done':
+              // Mark as completed with final content
+              dispatch({
+                type: 'UPDATE_MESSAGE',
+                payload: {
+                  chatId: currentChatId,
+                  messageId: assistantMessageId,
+                  message: {
+                    ...assistantMessage,
+                    content: accumulatedContent,
+                    sources: accumulatedSources,
+                    status: 'completed',
+                    isGenerating: false
+                  }
+                }
+              });
+              break;
+
+            case 'error':
+              // Handle streaming error
+              dispatch({
+                type: 'UPDATE_MESSAGE',
+                payload: {
+                  chatId: currentChatId,
+                  messageId: assistantMessageId,
+                  message: {
+                    ...assistantMessage,
+                    content: accumulatedContent, // Keep whatever was streamed
+                    status: 'error',
+                    isGenerating: false,
+                    error: {
+                      message: chunk.error || 'Unknown streaming error',
+                      retryable: true
+                    }
+                  }
+                }
+              });
+              break;
+          }
+        },
+        (error: Error) => {
+          // Handle connection error
+          console.error('Streaming error:', error);
+          
+          // Mark user message as error if it failed to send
+          if (userMessage.status === 'sending') {
+            dispatch({
+              type: 'UPDATE_MESSAGE',
+              payload: {
+                chatId: currentChatId,
+                messageId: userMessage.id,
+                message: {
+                  ...userMessage,
+                  status: 'error',
+                  error: {
+                    message: 'Failed to send message',
+                    retryable: true
+                  }
+                }
+              }
+            });
+          }
+
+          // Mark assistant message as error
+          dispatch({
+            type: 'UPDATE_MESSAGE',
+            payload: {
+              chatId: currentChatId,
+              messageId: assistantMessageId,
+              message: {
+                ...assistantMessage,
+                content: accumulatedContent, // Keep whatever was streamed
+                status: 'error',
+                isGenerating: false,
+                error: {
+                  message: error.message || 'Connection failed',
+                  retryable: true
+                }
+              }
+            }
+          });
+        }
+      );
+    } catch (error) {
+      console.error('Failed to start streaming:', error);
+      
+      // Handle initial request error
+      dispatch({
+        type: 'UPDATE_MESSAGE',
+        payload: {
+          chatId: currentChatId,
+          messageId: userMessage.id,
+          message: {
+            ...userMessage,
+            status: 'error',
+            error: {
+              message: 'Failed to send message',
+              retryable: true
+            }
+          }
+        }
+      });
+
+      // Mark assistant message as error
+      dispatch({
+        type: 'UPDATE_MESSAGE',
+        payload: {
+          chatId: currentChatId,
+          messageId: assistantMessageId,
+          message: {
+            ...assistantMessage,
+            status: 'error',
+            isGenerating: false,
+            error: {
+              message: 'Failed to connect to server',
+              retryable: true
+            }
+          }
+        }
+      });
+    }
   };
 
   const updateMessage = (messageId: string, content: string) => {
