@@ -177,12 +177,13 @@ interface ChatContextType {
   dispatch: React.Dispatch<ChatAction>;
   // Convenience methods
   loadChats: () => Promise<void>;
-  createChat: (title: string, model: string) => Promise<void>;
+  createChat: (title: string, model?: string) => Promise<void>;
   selectChat: (chatId: string) => void;
   sendMessage: (content: string) => void;
   updateMessage: (messageId: string, content: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   updateChat: (chatId: string, updates: Partial<Chat>) => Promise<void>;
+  updateSessionModel: (chatId: string, model: string) => Promise<void>;
   setSearchMode: (mode: SearchMode) => void;
   addSelectedFile: (fileId: string) => void;
   removeSelectedFile: (fileId: string) => void;
@@ -218,7 +219,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   };
 
   // Create new chat
-  const createChat = async (title: string, model: string) => {
+  const createChat = async (title: string, model?: string) => {
     try {
       const newChat = await chatService.createNewSession(title, model);
       dispatch({ type: 'ADD_CHAT', payload: newChat });
@@ -315,6 +316,38 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
   };
 
+  const updateSessionModel = async (chatId: string, model: string) => {
+    const chat = state.chats.find(c => c.id === chatId);
+    if (!chat) return;
+
+    const previousModel = chat.model;
+
+    try {
+      // Update local state immediately for responsive UI
+      const updatedChat = { ...chat, model, updatedAt: new Date().toISOString() };
+      dispatch({ type: 'UPDATE_CHAT', payload: updatedChat });
+
+      // Update backend
+      await chatService.updateSessionModel(chatId, model);
+    } catch (error) {
+      console.error('Error updating session model:', error);
+      
+      // Revert to previous model on error
+      const revertedChat = { ...chat, model: previousModel, updatedAt: new Date().toISOString() };
+      dispatch({ type: 'UPDATE_CHAT', payload: revertedChat });
+      
+      // Set error for UI to display
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to update model. Please choose a different model.' });
+      
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        dispatch({ type: 'SET_ERROR', payload: null });
+      }, 5000);
+      
+      throw error;
+    }
+  };
+
   const setSearchMode = (mode: SearchMode) => {
     dispatch({ type: 'SET_SEARCH_MODE', payload: mode });
   };
@@ -341,6 +374,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     updateMessage,
     deleteChat,
     updateChat,
+    updateSessionModel,
     setSearchMode,
     addSelectedFile,
     removeSelectedFile,

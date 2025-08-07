@@ -51,9 +51,9 @@ const Sidebar: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleNewChat = async () => {
-    const defaultModel = userState.selectedModel || userState.preferences?.defaultModel || 'mistral';
     try {
-      await createChat('New Chat', defaultModel);
+      // Create new chat without specifying model - backend will use default from .config
+      await createChat('New Chat');
       navigate('/');
     } catch (error) {
       console.error('Failed to create new chat:', error);

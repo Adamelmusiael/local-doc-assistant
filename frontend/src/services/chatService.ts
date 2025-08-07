@@ -121,7 +121,7 @@ export const chatService = {
   },
 
   // Create a new chat session
-  createNewSession: async (title: string = 'New Chat', model: string = 'mistral'): Promise<Chat> => {
+  createNewSession: async (title: string = 'New Chat', model?: string): Promise<Chat> => {
     try {
       const response = await chatAPI.createSession(title, model);
       return transformBackendSessionToChat(response, []);
@@ -141,12 +141,22 @@ export const chatService = {
     }
   },
 
-  // Update session title (backend doesn't have this endpoint yet, so we'll skip for now)
+  // Update session title
   updateSessionTitle: async (sessionId: string, newTitle: string): Promise<void> => {
     try {
       await chatAPI.updateSession(sessionId, { title: newTitle });
     } catch (error) {
       console.error('Failed to update session title:', error);
+      throw error;
+    }
+  },
+
+  // Update session model
+  updateSessionModel: async (sessionId: string, newModel: string): Promise<void> => {
+    try {
+      await chatAPI.updateSession(sessionId, { llm_model: newModel });
+    } catch (error) {
+      console.error('Failed to update session model:', error);
       throw error;
     }
   }
