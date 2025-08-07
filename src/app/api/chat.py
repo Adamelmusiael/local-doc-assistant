@@ -14,7 +14,7 @@ import os
 import openai
 import json
 from datetime import datetime
-
+from src.config.config_loader import get_default_model, get_allowed_models
 # Add the src directory to Python path
 src_path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(src_path))
@@ -30,7 +30,8 @@ router = APIRouter()
 
 LLM_API_URL = os.getenv("LLM_API_URL", "http://localhost:11434/api/generate")
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", Path(__file__).parent.parent.parent.parent / "upload_files"))
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "mistral")
+DEFAULT_MODEL = get_default_model()  # This reads from .config file properly
+ALLOWED_MODELS = get_allowed_models()
 
 # Request Models
 class CreateChatSessionRequest(BaseModel):
@@ -148,7 +149,7 @@ async def chat_message_with_metadata(session_id: int, request: ChatRequest):
                 if chat_session and chat_session.llm_model:
                     model = chat_session.llm_model
                 else:
-                    model = "mistral"
+                    model = DEFAULT_MODEL
         result = handle_chat_message(
             session_id,
             request.question,
@@ -182,7 +183,7 @@ async def stream_chat_message(session_id: int, request: ChatRequest):
                     if chat_session and chat_session.llm_model:
                         model = chat_session.llm_model
                     else:
-                        model = "mistral"
+                        model = DEFAULT_MODEL
             
             # Send initial metadata
             yield f"data: {json.dumps({'type': 'start', 'session_id': session_id, 'model': model})}\n\n"
@@ -321,11 +322,13 @@ async def update_chat_session(session_id: int, request: UpdateChatSessionRequest
             if request.llm_model is not None:
                 # Validate model if provided
                 llm_model = request.llm_model.strip() if request.llm_model else ""
-                if llm_model == 'string':
+                if llm_model == 'string' or not llm_model:
                     llm_model = DEFAULT_MODEL
-                if not llm_model:
-                    llm_model = DEFAULT_MODEL
+                elif llm_model not in ALLOWED_MODELS:
+                    raise HTTPException(status_code=400, detail=f"Invalid model: {llm_model}")
+                
                 update_data["llm_model"] = llm_model
+
             if request.status is not None:
                 update_data["status"] = request.status
             if request.session_metadata is not None:
@@ -366,6 +369,9 @@ async def create_chat_session(request: CreateChatSessionRequest):
         if not llm_model:
             llm_model = DEFAULT_MODEL
 
+        if llm_model not in ALLOWED_MODELS:
+            raise HTTPException(status_code=400, detail=f"Invalid model: {llm_model}")
+        
         with get_session() as session:
             chat_session = ChatSession(
                 title=request.title,
