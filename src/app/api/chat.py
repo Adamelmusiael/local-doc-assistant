@@ -48,6 +48,13 @@ class ChatRequest(BaseModel):
     selected_document_ids: Optional[List[int]] = Field(None, description="List of document IDs to focus on")
     search_mode: Optional[str] = Field("all", description="Search mode to use: 'all', 'hybrid', 'selected_only'")
 
+class UpdateChatSessionRequest(BaseModel):
+    """Request model for updating an existing chat session"""
+    title: Optional[str] = Field(None, description="New title for the chat session")
+    llm_model: Optional[str] = Field(None, description="New LLM model for the session")
+    status: Optional[str] = Field(None, description="New status for the session (e.g., 'active', 'archived', 'finished')")
+    session_metadata: Optional[str] = Field(None, description="New metadata for the session")
+
 # Response Models
 class ChatSessionResponse(BaseModel):
     """Response model for chat session data"""
@@ -293,6 +300,56 @@ async def delete_chat_session(session_id: int):
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting chat session: {str(e)}")
+
+@router.put("/chat_sessions/{session_id}", response_model=ChatSessionResponse)
+async def update_chat_session(session_id: int, request: UpdateChatSessionRequest):
+    """
+    Update an existing chat session by ID.
+    
+    Updates session fields like title, model, status, or metadata. Only provided fields will be updated.
+    """
+    try:
+        with get_session() as session:
+            chat_session = session.get(ChatSession, session_id)
+            if not chat_session:
+                raise HTTPException(status_code=404, detail="Chat session not found")
+            
+            # Update only the fields that were provided in the request
+            update_data = {}
+            if request.title is not None:
+                update_data["title"] = request.title
+            if request.llm_model is not None:
+                # Validate model if provided
+                llm_model = request.llm_model.strip() if request.llm_model else ""
+                if llm_model == 'string':
+                    llm_model = DEFAULT_MODEL
+                if not llm_model:
+                    llm_model = DEFAULT_MODEL
+                update_data["llm_model"] = llm_model
+            if request.status is not None:
+                update_data["status"] = request.status
+            if request.session_metadata is not None:
+                update_data["session_metadata"] = request.session_metadata
+            
+            # Apply updates
+            for field, value in update_data.items():
+                setattr(chat_session, field, value)
+            
+            session.add(chat_session)
+            session.commit()
+            session.refresh(chat_session)
+            
+            return ChatSessionResponse(
+                id=chat_session.id,
+                title=chat_session.title,
+                created_at=chat_session.created_at.isoformat() if chat_session.created_at else None,
+                llm_model=chat_session.llm_model,
+                user_id=chat_session.user_id,
+                status=chat_session.status,
+                session_metadata=chat_session.session_metadata
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating chat session: {str(e)}")
 
 @router.post("/chat_sessions", response_model=ChatSessionResponse)
 async def create_chat_session(request: CreateChatSessionRequest):
