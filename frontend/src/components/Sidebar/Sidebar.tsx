@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useChat } from '../../contexts/ChatContext';
-import { useUser } from '../../contexts/UserContext';
 import ChatSession from './ChatSession';
 import BackendStatusIndicator from '../BackendStatusIndicator';
 import { APP_VERSION } from '../../config/version';
@@ -34,21 +33,12 @@ const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const UserIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
-  </svg>
-);
-
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { state: chatState, createChat, selectChat, deleteChat, updateChat } = useChat();
-  const { state: userState, logout } = useUser();
   
   const [isChatsExpanded, setIsChatsExpanded] = useState(true);
-  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleNewChat = async () => {
     try {
@@ -176,7 +166,8 @@ const Sidebar: React.FC = () => {
         )}
       </div>
 
-      {/* User Profile Area */}
+      {/* User Profile Area - Removed as requested */}
+      {/* 
       <div className="sidebar__user">
         <div 
           className="sidebar__user-info"
@@ -222,6 +213,7 @@ const Sidebar: React.FC = () => {
           </div>
         )}
       </div>
+      */}
     </div>
   );
 };
