@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Chat } from '../../types';
+import { formatDate } from '../../utils/dateUtils';
 
 // Icons
 const MoreIcon = () => (
@@ -74,20 +75,6 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   const confirmDelete = () => {
     onDelete(chat.id);
     setShowDeleteModal(false);
-  };
-
-  const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffInHours < 168) { // 7 days
-      return date.toLocaleDateString([], { weekday: 'short' });
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
   };
 
   const getInitials = (title: string) => {

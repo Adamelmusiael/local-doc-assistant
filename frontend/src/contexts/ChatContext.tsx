@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { Chat, ChatMessage, SearchMode } from '../types';
 import { chatService } from '../services/chatService';
 import { StreamingChatService, StreamChunk } from '../services/streamingService';
+import { createTimestamp } from '../utils/dateUtils';
 
 // State interface for chat context
 interface ChatState {
@@ -101,7 +102,7 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
             return {
               ...chat,
               messages: [...chat.messages, action.payload.message],
-              updatedAt: new Date().toISOString()
+              updatedAt: createTimestamp()
             };
           }
           return chat;
@@ -110,7 +111,7 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
           ? {
               ...state.currentChat,
               messages: [...state.currentChat.messages, action.payload.message],
-              updatedAt: new Date().toISOString()
+              updatedAt: createTimestamp()
             }
           : state.currentChat
       };
@@ -243,7 +244,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       id: Date.now().toString(),
       content,
       role: 'user',
-      timestamp: new Date().toISOString(),
+      timestamp: createTimestamp(),
       status: 'pending',
       attachments: attachedFiles || undefined,
     };
@@ -263,7 +264,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       id: assistantMessageId,
       content: '',
       role: 'assistant',
-      timestamp: new Date().toISOString(),
+      timestamp: createTimestamp(),
       status: 'streaming',
       isGenerating: true,
     };
@@ -486,7 +487,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const updatedMessage: ChatMessage = {
       ...state.currentChat.messages.find(m => m.id === messageId)!,
       content,
-      timestamp: new Date().toISOString(),
+      timestamp: createTimestamp(),
     };
 
     dispatch({
@@ -520,7 +521,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
       
       // Update local state
-      const updatedChat = { ...chat, ...updates, updatedAt: new Date().toISOString() };
+      const updatedChat = { ...chat, ...updates, updatedAt: createTimestamp() };
       dispatch({ type: 'UPDATE_CHAT', payload: updatedChat });
     } catch (error) {
       console.error('Error updating chat:', error);
@@ -528,7 +529,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       
       // Revert the title change in case of backend error
       if (updates.title) {
-        const revertedChat = { ...chat, updatedAt: new Date().toISOString() };
+        const revertedChat = { ...chat, updatedAt: createTimestamp() };
         dispatch({ type: 'UPDATE_CHAT', payload: revertedChat });
       }
     }
@@ -542,7 +543,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     try {
       // Update local state immediately for responsive UI
-      const updatedChat = { ...chat, model, updatedAt: new Date().toISOString() };
+      const updatedChat = { ...chat, model, updatedAt: createTimestamp() };
       dispatch({ type: 'UPDATE_CHAT', payload: updatedChat });
 
       // Update backend
@@ -551,7 +552,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       console.error('Error updating session model:', error);
       
       // Revert to previous model on error
-      const revertedChat = { ...chat, model: previousModel, updatedAt: new Date().toISOString() };
+      const revertedChat = { ...chat, model: previousModel, updatedAt: createTimestamp() };
       dispatch({ type: 'UPDATE_CHAT', payload: revertedChat });
       
       // Set error for UI to display

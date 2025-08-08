@@ -241,7 +241,7 @@ async def list_chat_sessions():
                 sessions_list.append(ChatSessionResponse(
                     id=session_obj.id,
                     title=session_obj.title,
-                    created_at=session_obj.created_at.isoformat() if session_obj.created_at else None,
+                    created_at=session_obj.created_at.isoformat() + 'Z' if session_obj.created_at else None,
                     llm_model=session_obj.llm_model,
                     user_id=session_obj.user_id,
                     status=session_obj.status,
@@ -270,7 +270,7 @@ async def get_chat_session(session_id: int):
             return ChatSessionResponse(
                 id=chat_session.id,
                 title=chat_session.title,
-                created_at=chat_session.created_at.isoformat() if chat_session.created_at else None,
+                created_at=chat_session.created_at.isoformat() + 'Z' if chat_session.created_at else None,
                 llm_model=chat_session.llm_model,
                 user_id=chat_session.user_id,
                 status=chat_session.status,
@@ -345,7 +345,7 @@ async def update_chat_session(session_id: int, request: UpdateChatSessionRequest
             return ChatSessionResponse(
                 id=chat_session.id,
                 title=chat_session.title,
-                created_at=chat_session.created_at.isoformat() if chat_session.created_at else None,
+                created_at=chat_session.created_at.isoformat() + 'Z' if chat_session.created_at else None,
                 llm_model=chat_session.llm_model,
                 user_id=chat_session.user_id,
                 status=chat_session.status,
@@ -386,7 +386,7 @@ async def create_chat_session(request: CreateChatSessionRequest):
             return ChatSessionResponse(
                 id=chat_session.id,
                 title=chat_session.title,
-                created_at=chat_session.created_at.isoformat() if chat_session.created_at else None,
+                created_at=chat_session.created_at.isoformat() + 'Z' if chat_session.created_at else None,
                 llm_model=chat_session.llm_model,
                 user_id=chat_session.user_id,
                 status=chat_session.status,
@@ -413,7 +413,7 @@ async def get_chat_messages(session_id: int):
                     id=message.id,
                     role=message.role,
                     content=message.content,
-                    timestamp=message.timestamp.isoformat() if message.timestamp else None,
+                    timestamp=message.timestamp.isoformat() + 'Z' if message.timestamp else None,
                     sources=message.sources,
                     confidence=message.confidence,
                     hallucination=message.hallucination

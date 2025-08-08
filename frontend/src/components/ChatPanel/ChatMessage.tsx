@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChatMessage as ChatMessageType } from '../../types';
+import { formatTimestamp } from '../../utils/dateUtils';
 
 // Icons
 const CopyIcon = () => (
@@ -58,11 +59,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const hasError = message.status === 'error' && message.error;
   const isStreaming = message.status === 'streaming' || message.isGenerating;
   const isPending = message.status === 'pending' || message.status === 'sending';
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
 
   const handleCopy = async () => {
     try {

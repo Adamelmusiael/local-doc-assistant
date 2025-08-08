@@ -242,7 +242,7 @@ async def upload_file(
                 department=department,
                 client=client
             ),
-            upload_time=datetime.utcnow().isoformat(),
+            upload_time=datetime.utcnow().isoformat() + 'Z',
             database_status="saved"
         )
         
@@ -282,7 +282,7 @@ async def list_documents():
                     file_path=doc.pointer_to_loc,
                     file_size=file_size,
                     file_size_formatted=format_file_size(file_size),
-                    created_at=doc.created_at.isoformat() if doc.created_at else None,
+                    created_at=doc.created_at.isoformat() + 'Z' if doc.created_at else None,
                     processed=doc.processed
                 ))
             
@@ -363,7 +363,7 @@ async def get_document(document_id: int):
                 file_exists=file_exists,
                 file_size=file_size,
                 file_size_formatted=format_file_size(file_size),
-                created_at=document.created_at.isoformat() if document.created_at else None,
+                created_at=document.created_at.isoformat() + 'Z' if document.created_at else None,
                 processed=document.processed
             )
             
