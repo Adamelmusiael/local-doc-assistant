@@ -230,11 +230,35 @@ async def list_chat_sessions():
     """
     List all chat sessions with metadata from database.
     
-    Returns a list of all chat sessions with their metadata and status.
+    Returns a list of all chat sessions with their metadata and status,
+    sorted by the latest message timestamp (newest first).
     """
     try:
         with get_session() as session:
-            statement = select(ChatSession)
+            # Query to get sessions with their latest message timestamp
+            # Using subquery to get the latest message timestamp for each session
+            latest_message_subquery = (
+                select(
+                    ChatMessage.session_id,
+                    func.max(ChatMessage.timestamp).label('latest_message_time')
+                )
+                .group_by(ChatMessage.session_id)
+                .subquery()
+            )
+            
+            # Join ChatSession with the subquery and order by latest message time
+            statement = (
+                select(ChatSession)
+                .outerjoin(
+                    latest_message_subquery,
+                    ChatSession.id == latest_message_subquery.c.session_id
+                )
+                .order_by(
+                    latest_message_subquery.c.latest_message_time.desc().nulls_last(),
+                    ChatSession.created_at.desc()
+                )
+            )
+            
             sessions = session.exec(statement).all()
             sessions_list = []
             for session_obj in sessions:
