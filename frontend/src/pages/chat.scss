@@ -263,6 +263,7 @@
   display: flex;
   gap: 12px;
   max-width: 100%;
+  width: 100%;
 
   &--user {
     flex-direction: row-reverse;
@@ -273,7 +274,10 @@
       border-radius: 18px 18px 4px 18px;
       border: 1px solid #e5e7eb;
       max-width: 70%;
-      min-width: fit-content;
+      min-width: 0; // Allow shrinking
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
     }
 
     .chat-message__avatar {
@@ -292,7 +296,10 @@
       border-radius: 18px 18px 18px 4px;
       border: 1px solid #e5e7eb;
       max-width: 85%;
-      min-width: fit-content;
+      min-width: 0; // Allow shrinking
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
     }
 
     .chat-message__avatar {
@@ -320,6 +327,8 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    box-sizing: border-box; // Include padding in width
+    overflow: hidden; // Prevent content overflow
   }
 
   &__header {
@@ -329,6 +338,7 @@
     margin-bottom: 4px;
     font-size: 12px;
     opacity: 0.7;
+    flex-shrink: 0; // Prevent header from shrinking
   }
 
   &__role {
@@ -341,13 +351,53 @@
 
   &__body {
     margin-bottom: 8px;
+    overflow: hidden; // Prevent body overflow
   }
 
   &__text {
     line-height: 1.6;
     white-space: pre-wrap;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word; // More aggressive word breaking
+    hyphens: auto;
     font-size: 14px;
+    max-width: 100%;
+    overflow: hidden; // Prevent text overflow
+    
+    // Handle code blocks and inline code within messages
+    pre, code {
+      white-space: pre-wrap !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      word-break: break-all !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+    }
+    
+    // Handle tables or other wide elements
+    table {
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      
+      td, th {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+      }
+    }
+    
+    // Handle images
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+    
+    // Handle any other potentially wide elements
+    * {
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
   }
 
   &__attachments {
