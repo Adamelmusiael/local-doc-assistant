@@ -4,6 +4,7 @@ import ChatMessage from "./ChatMessage";
 import { SearchMode } from "../../types";
 import { useChat } from "../../contexts/ChatContext";
 import { useFile } from "../../contexts/FileContext";
+import { useEffect, useRef } from "react";
 
 interface ChatDialogProps {
   selectedModel: string;
@@ -13,6 +14,9 @@ interface ChatDialogProps {
 const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) => {
   const { state: chatState, sendMessage } = useChat();
   const { state: fileState } = useFile();
+  
+  // Ref for the messages container to control scrolling
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Get current chat messages
   const messages = chatState.currentChat?.messages || [];
@@ -24,6 +28,18 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) =>
     msg.status === 'streaming' || 
     msg.isGenerating
   );
+
+  // Auto-scroll to bottom when new messages are added or when streaming
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      // Smooth scroll to bottom
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messages.length, messages[messages.length - 1]?.content]); // Trigger on new messages or content changes
 
   const handleSendMessage = async (message: string, _model: string, _searchMode: SearchMode, _attachments?: File[]) => {
     // Get selected files from FileContext
@@ -46,7 +62,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) =>
 
   return (
     <div className="chat-dialog">
-      <div className="chat-dialog__messages">
+      <div className="chat-dialog__messages" ref={messagesContainerRef}>
         {!chatState.currentChat ? (
           <div className="chat-dialog__no-chat">
             <h3>No chat selected</h3>
