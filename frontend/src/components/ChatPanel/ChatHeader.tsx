@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Model, SearchMode } from '../../types';
+import { useClickOutside } from '../../hooks/useClickOutside';
+import { useMenu } from '../../contexts/MenuContext';
 
 // Icons
 const MenuIcon = () => (
@@ -42,6 +44,34 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 }) => {
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showSearchModeDropdown, setShowSearchModeDropdown] = useState(false);
+  const { activeMenu, setActiveMenu, closeAllMenus } = useMenu();
+
+  const modelMenuId = 'chat-header-model';
+  const searchModeMenuId = 'chat-header-search-mode';
+
+  const modelDropdownRef = useClickOutside<HTMLDivElement>(() => {
+    if (showModelDropdown) {
+      setShowModelDropdown(false);
+      setActiveMenu(null);
+    }
+  }, showModelDropdown);
+
+  const searchModeDropdownRef = useClickOutside<HTMLDivElement>(() => {
+    if (showSearchModeDropdown) {
+      setShowSearchModeDropdown(false);
+      setActiveMenu(null);
+    }
+  }, showSearchModeDropdown);
+
+  // Close dropdowns when another menu opens
+  useEffect(() => {
+    if (activeMenu && activeMenu !== modelMenuId && showModelDropdown) {
+      setShowModelDropdown(false);
+    }
+    if (activeMenu && activeMenu !== searchModeMenuId && showSearchModeDropdown) {
+      setShowSearchModeDropdown(false);
+    }
+  }, [activeMenu, showModelDropdown, showSearchModeDropdown]);
 
   const selectedModelData = models.find(model => model.id === selectedModel);
 
@@ -49,6 +79,40 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     [SearchMode.SELECTED]: "Selected Only",
     [SearchMode.HYBRID]: "Hybrid",
     [SearchMode.ALL]: "All Files"
+  };
+
+  const handleModelDropdownToggle = () => {
+    if (showModelDropdown) {
+      setShowModelDropdown(false);
+      setActiveMenu(null);
+    } else {
+      closeAllMenus();
+      setShowModelDropdown(true);
+      setActiveMenu(modelMenuId);
+    }
+  };
+
+  const handleSearchModeDropdownToggle = () => {
+    if (showSearchModeDropdown) {
+      setShowSearchModeDropdown(false);
+      setActiveMenu(null);
+    } else {
+      closeAllMenus();
+      setShowSearchModeDropdown(true);
+      setActiveMenu(searchModeMenuId);
+    }
+  };
+
+  const handleModelSelect = (modelId: string) => {
+    onModelChange(modelId);
+    setShowModelDropdown(false);
+    setActiveMenu(null);
+  };
+
+  const handleSearchModeSelect = (mode: SearchMode) => {
+    onSearchModeChange(mode);
+    setShowSearchModeDropdown(false);
+    setActiveMenu(null);
   };
 
   return (
@@ -65,7 +129,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         <div className="chat-header__model-selector">
           <button
             className="chat-header__model-btn"
-            onClick={() => setShowModelDropdown(!showModelDropdown)}
+            onClick={handleModelDropdownToggle}
           >
             <span className="chat-header__model-name">
               {selectedModelData?.name || "Select Model"}
@@ -74,15 +138,12 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           </button>
           
           {showModelDropdown && (
-            <div className="chat-header__dropdown chat-header__model-dropdown">
+            <div className="chat-header__dropdown chat-header__model-dropdown" ref={modelDropdownRef}>
               {models.map((model) => (
                 <button
                   key={model.id}
                   className={`chat-header__dropdown-item ${model.id === selectedModel ? 'active' : ''}`}
-                  onClick={() => {
-                    onModelChange(model.id);
-                    setShowModelDropdown(false);
-                  }}
+                  onClick={() => handleModelSelect(model.id)}
                 >
                   <div className="chat-header__model-info">
                     <span className="chat-header__model-name">{model.name}</span>
@@ -100,22 +161,19 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         <div className="chat-header__search-mode">
           <button
             className="chat-header__search-mode-btn"
-            onClick={() => setShowSearchModeDropdown(!showSearchModeDropdown)}
+            onClick={handleSearchModeDropdownToggle}
           >
             <span>{searchModeLabels[searchMode]}</span>
             <ChevronDownIcon />
           </button>
           
           {showSearchModeDropdown && (
-            <div className="chat-header__dropdown chat-header__search-mode-dropdown">
+            <div className="chat-header__dropdown chat-header__search-mode-dropdown" ref={searchModeDropdownRef}>
               {Object.entries(searchModeLabels).map(([mode, label]) => (
                 <button
                   key={mode}
                   className={`chat-header__dropdown-item ${mode === searchMode ? 'active' : ''}`}
-                  onClick={() => {
-                    onSearchModeChange(mode as SearchMode);
-                    setShowSearchModeDropdown(false);
-                  }}
+                  onClick={() => handleSearchModeSelect(mode as SearchMode)}
                 >
                   {label}
                 </button>

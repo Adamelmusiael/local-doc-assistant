@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFile } from '../../contexts/FileContext';
 import { useChat } from '../../contexts/ChatContext';
+import { useMenu } from '../../contexts/MenuContext';
 
 interface FileSelectionModalProps {
   isOpen: boolean;
@@ -11,6 +12,14 @@ const FileSelectionModal: React.FC<FileSelectionModalProps> = ({ isOpen, onClose
   const { state: fileState } = useFile();
   const { state: chatState, addSelectedFile, removeSelectedFile } = useChat();
   const [tempSelectedFiles, setTempSelectedFiles] = useState<string[]>(chatState.selectedFiles);
+  const { closeAllMenus } = useMenu();
+
+  // Close all menus when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      closeAllMenus();
+    }
+  }, [isOpen, closeAllMenus]);
 
   // Filter only completed files
   const availableFiles = fileState.files.filter(file => 

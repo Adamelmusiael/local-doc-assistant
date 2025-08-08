@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Chat } from '../../types';
 import { formatDate } from '../../utils/dateUtils';
+import { useClickOutside } from '../../hooks/useClickOutside';
+import { useMenu } from '../../contexts/MenuContext';
 
 // Icons
 const MoreIcon = () => (
@@ -44,15 +46,39 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(chat.title);
+  const { activeMenu, setActiveMenu, closeAllMenus } = useMenu();
+  
+  const menuId = `chat-session-${chat.id}`;
+  const menuRef = useClickOutside<HTMLDivElement>(() => {
+    if (showMenu) {
+      setShowMenu(false);
+      setActiveMenu(null);
+    }
+  }, showMenu);
+
+  // Close menu when another menu opens
+  useEffect(() => {
+    if (activeMenu && activeMenu !== menuId && showMenu) {
+      setShowMenu(false);
+    }
+  }, [activeMenu, menuId, showMenu]);
 
   const handleMenuToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowMenu(!showMenu);
+    if (showMenu) {
+      setShowMenu(false);
+      setActiveMenu(null);
+    } else {
+      closeAllMenus(); // Close other menus first
+      setShowMenu(true);
+      setActiveMenu(menuId);
+    }
   };
 
   const handleRename = () => {
     setIsRenaming(true);
     setShowMenu(false);
+    setActiveMenu(null);
   };
 
   const handleSaveRename = () => {
@@ -70,6 +96,7 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   const handleDelete = () => {
     setShowDeleteModal(true);
     setShowMenu(false);
+    setActiveMenu(null);
   };
 
   const confirmDelete = () => {
@@ -144,7 +171,7 @@ const ChatSession: React.FC<ChatSessionProps> = ({
         </div>
 
         {showMenu && (
-          <div className="sidebar__chat-menu">
+          <div className="sidebar__chat-menu" ref={menuRef}>
             <button
               className="sidebar__chat-menu-item"
               onClick={handleRename}

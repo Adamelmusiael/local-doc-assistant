@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Model } from '../../types';
+import { useClickOutside } from '../../hooks/useClickOutside';
+import { useMenu } from '../../contexts/MenuContext';
 
 // Icons
 const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -41,12 +43,51 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showModelInfo, setShowModelInfo] = useState<string | null>(null);
+  const { activeMenu, setActiveMenu, closeAllMenus } = useMenu();
+  
+  const menuId = `model-selector-${Math.random()}`;
+  const dropdownRef = useClickOutside<HTMLDivElement>(() => {
+    if (showDropdown) {
+      setShowDropdown(false);
+      setActiveMenu(null);
+    }
+  }, showDropdown);
+  
+  const infoRef = useClickOutside<HTMLDivElement>(() => {
+    if (showModelInfo) {
+      setShowModelInfo(null);
+    }
+  }, !!showModelInfo);
+
+  // Close dropdown when another menu opens
+  useEffect(() => {
+    if (activeMenu && activeMenu !== menuId && showDropdown) {
+      setShowDropdown(false);
+    }
+  }, [activeMenu, menuId, showDropdown]);
 
   const selectedModelData = models.find(model => model.id === selectedModel);
 
   const handleModelSelect = (modelId: string) => {
     onModelChange(modelId);
     setShowDropdown(false);
+    setActiveMenu(null);
+  };
+
+  const handleDropdownToggle = () => {
+    if (showDropdown) {
+      setShowDropdown(false);
+      setActiveMenu(null);
+    } else {
+      closeAllMenus(); // Close other menus first
+      setShowDropdown(true);
+      setActiveMenu(menuId);
+    }
+  };
+
+  const handleInfoToggle = () => {
+    const newInfoState = showModelInfo === selectedModel ? null : selectedModel;
+    setShowModelInfo(newInfoState);
   };
 
   const getModelStatus = (model: Model) => {
@@ -66,7 +107,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       <div className="model-selector__main">
         <button
           className="model-selector__button"
-          onClick={() => setShowDropdown(!showDropdown)}
+          onClick={handleDropdownToggle}
           disabled={models.length === 0}
         >
           <div className="model-selector__selected">
@@ -85,7 +126,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         {showInfo && selectedModelData && (
           <button
             className="model-selector__info-btn"
-            onClick={() => setShowModelInfo(showModelInfo === selectedModel ? null : selectedModel)}
+            onClick={handleInfoToggle}
             title="Model information"
           >
             <InfoIcon />
@@ -95,7 +136,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 
       {/* Model Info Popup */}
       {showModelInfo && selectedModelData && (
-        <div className="model-selector__info-popup">
+        <div className="model-selector__info-popup" ref={infoRef}>
           <div className="model-selector__info-header">
             <h4>{selectedModelData.name}</h4>
             <button
@@ -131,7 +172,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 
       {/* Dropdown */}
       {showDropdown && (
-        <div className="model-selector__dropdown">
+        <div className="model-selector__dropdown" ref={dropdownRef}>
           <div className="model-selector__dropdown-header">
             <h4>Select Model</h4>
           </div>
