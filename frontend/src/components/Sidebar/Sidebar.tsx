@@ -97,6 +97,17 @@ const Sidebar: React.FC = () => {
         </div>
       </div>
 
+      {/* New Chat Button */}
+      <div className="sidebar__new-chat">
+        <button 
+          className="sidebar__new-chat-btn"
+          onClick={handleNewChat}
+        >
+          <PlusIcon />
+          <span>New Chat</span>
+        </button>
+      </div>
+
       {/* Navigation Menu */}
       <nav className="sidebar__nav">
         <Link 
@@ -120,17 +131,6 @@ const Sidebar: React.FC = () => {
           <span>Backend Status</span>
         </div>
       </nav>
-
-      {/* New Chat Button */}
-      <div className="sidebar__new-chat">
-        <button 
-          className="sidebar__new-chat-btn"
-          onClick={handleNewChat}
-        >
-          <PlusIcon />
-          <span>New Chat</span>
-        </button>
-      </div>
 
       {/* Chat Sessions List */}
       <div className="sidebar__chats">
