@@ -370,6 +370,57 @@ async def get_document(document_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving document: {str(e)}")
 
+@router.get("/{document_id}/preview")
+async def preview_document(document_id: int):
+    """
+    Serve the original document file for preview.
+    
+    Returns the actual file content with appropriate headers for browser preview.
+    """
+    try:
+        with get_session() as session:
+            document = session.get(Document, document_id)
+            
+            if not document:
+                raise HTTPException(status_code=404, detail="Document not found")
+            
+            if not document.pointer_to_loc:
+                raise HTTPException(status_code=404, detail="Document file path not found")
+            
+            file_path = Path(document.pointer_to_loc)
+            
+            if not file_path.exists():
+                raise HTTPException(status_code=404, detail="Document file not found on disk")
+            
+            # Import here to avoid circular imports
+            from fastapi.responses import FileResponse
+            
+            # Determine MIME type based on file extension
+            mime_types = {
+                '.pdf': 'application/pdf',
+                '.txt': 'text/plain',
+                '.doc': 'application/msword',
+                '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            }
+            
+            file_extension = file_path.suffix.lower()
+            content_type = mime_types.get(file_extension, 'application/octet-stream')
+            
+            # Return file with headers for browser preview
+            return FileResponse(
+                path=str(file_path),
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": f"inline; filename=\"{document.filename}\"",
+                    "Cache-Control": "public, max-age=3600"
+                }
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serving document preview: {str(e)}")
+
 @router.delete("/delete_all_documents_and_chunks", response_model=DeleteChunksResponse)
 def delete_all_documents_and_chunks():
     """

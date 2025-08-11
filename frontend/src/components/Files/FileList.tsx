@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { File, ProcessingStatus } from '../../types';
 import { useFile } from '../../contexts/FileContext';
-import { simulateFileDownload, simulateFilePreview } from '../../mock/fileUploadMocks';
+import { simulateFileDownload } from '../../mock/fileUploadMocks';
+import { fileAPI } from '../../services/api';
 import './FileList.scss';
 
 interface FileListProps {
@@ -87,7 +88,22 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
   };
 
   const handlePreview = (file: File) => {
-    simulateFilePreview(file.id);
+    // Log debug information
+    console.log('Preview clicked for file:', file);
+    console.log('File ID:', file.id);
+    console.log('Document ID:', file.documentId);
+    
+    // Validate document ID exists
+    if (!file.documentId) {
+      console.error('Document ID is missing for file:', file);
+      alert('Error: Document ID is missing. Cannot preview file.');
+      return;
+    }
+    
+    // Open file preview in new tab using the backend preview endpoint
+    const previewUrl = fileAPI.getPreviewUrl(file.documentId);
+    console.log('Opening preview URL:', previewUrl);
+    window.open(previewUrl, '_blank', 'noopener,noreferrer');
   };
 
   if (files.length === 0) {

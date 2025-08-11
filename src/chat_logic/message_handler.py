@@ -7,7 +7,7 @@ from typing import AsyncGenerator, Dict, Any, Optional, List
 from vectorstore.qdrant_search import search_documents, search_documents_by_ids
 from db.models import Document
 import os
-import openai
+from openai import AsyncOpenAI
 
 LLM_API_URL = os.getenv("LLM_API_URL", "http://localhost:11434/api/generate")
 
@@ -27,8 +27,11 @@ def get_chat_history(session_id):
 
 def generate_response(prompt, model="mistral"):
     if model in get_openai_models():
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        response = openai.chat.completions.create(
+        # Note: This function should be deprecated in favor of the streaming version
+        # For now, using a synchronous client for backward compatibility
+        from openai import OpenAI
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
@@ -57,10 +60,10 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
     Yields chunks of text as they are generated.
     """
     if model in get_openai_models():
-        # OpenAI streaming
-        openai.api_key = os.getenv("OPENAI_API_KEY")
+        # OpenAI streaming with proper async client
         try:
-            response = await openai.chat.completions.create(
+            client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            stream = await client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.2,
@@ -68,7 +71,8 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
                 stream=True  # Enable streaming
             )
             
-            async for chunk in response:
+            # Properly iterate through the async stream
+            async for chunk in stream:
                 if chunk.choices[0].delta.content is not None:
                     yield chunk.choices[0].delta.content
                     

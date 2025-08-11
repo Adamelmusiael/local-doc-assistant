@@ -46,7 +46,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [showFileModal, setShowFileModal] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const { state: chatState } = useChat();
+  const { state: chatState, removeSelectedFile } = useChat();
   const { state: fileState } = useFile();
 
   const canSend = message.trim() && !isLoading;
@@ -103,7 +103,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 <span className="chat-input__attachment-size">{formatFileSize(file.size)}</span>
                 <button
                   type="button"
-                  onClick={() => {/* Remove handled by modal */}}
+                  onClick={() => removeSelectedFile(file.id)}
                   className="chat-input__attachment-remove"
                   title="Remove attachment"
                 >

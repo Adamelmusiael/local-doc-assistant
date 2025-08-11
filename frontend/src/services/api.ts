@@ -124,6 +124,27 @@ export const fileAPI = {
     const response = await apiClient.get(`/docs/list_documents`);
     return response.data;
   },
+
+  // Get preview URL for a document
+  getPreviewUrl: (documentId: number): string => {
+    return `http://localhost:8000/docs/${documentId}/preview`;
+  },
+
+  // Resolve file IDs to document IDs for chat attachments
+  resolveFileIds: async (fileIds: string[]): Promise<{
+    mappings: Array<{
+      file_id: string;
+      document_id: number | null;
+      filename: string | null;
+      found: boolean;
+    }>;
+    success: boolean;
+  }> => {
+    const response = await apiClient.post(`/docs/resolve-file-ids`, { 
+      file_ids: fileIds 
+    });
+    return response.data;
+  },
 };
 
 // --- Model Operations ---

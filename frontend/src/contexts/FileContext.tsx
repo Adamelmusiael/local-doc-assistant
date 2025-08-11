@@ -128,7 +128,8 @@ const FileContext = createContext<FileContextType | undefined>(undefined);
 // Helper function to transform backend data to frontend format
 const transformBackendFile = (backendFile: any): File => {
   return {
-    id: String(backendFile.id), // Convert number to string
+    id: String(backendFile.id), // Convert number to string for frontend compatibility
+    documentId: backendFile.id, // Store original backend document ID
     name: backendFile.filename || 'Unknown',
     originalName: backendFile.filename || 'Unknown',
     size: backendFile.file_size || 0, // Use real file size from backend

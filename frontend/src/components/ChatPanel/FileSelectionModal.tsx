@@ -14,12 +14,13 @@ const FileSelectionModal: React.FC<FileSelectionModalProps> = ({ isOpen, onClose
   const [tempSelectedFiles, setTempSelectedFiles] = useState<string[]>(chatState.selectedFiles);
   const { closeAllMenus } = useMenu();
 
-  // Close all menus when modal opens
+  // Update tempSelectedFiles when modal opens or chatState.selectedFiles changes
   useEffect(() => {
     if (isOpen) {
+      setTempSelectedFiles(chatState.selectedFiles);
       closeAllMenus();
     }
-  }, [isOpen, closeAllMenus]);
+  }, [isOpen, chatState.selectedFiles, closeAllMenus]);
 
   // Filter only completed files
   const availableFiles = fileState.files.filter(file => 

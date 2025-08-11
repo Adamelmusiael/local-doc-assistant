@@ -282,6 +282,20 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     let accumulatedSources: string[] = [];
 
     try {
+      // Extract document IDs from attached files (simple conversion since fileId is String(documentId))
+      let documentIds: number[] = [];
+      if (attachedFiles && attachedFiles.length > 0) {
+        // Since frontend fileId is String(documentId), we can convert back to numbers
+        documentIds = attachedFiles
+          .map(file => parseInt(file.fileId, 10))
+          .filter(id => !isNaN(id)); // Filter out invalid IDs
+        
+        console.log('Using document IDs from attached files:', {
+          attachedFiles: attachedFiles.map(f => ({ fileId: f.fileId, name: f.name })),
+          documentIds: documentIds
+        });
+      }
+
       // Update user message status to sending
       dispatch({
         type: 'UPDATE_MESSAGE',
@@ -298,7 +312,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           chatId: currentChatId,
           model: state.currentChat.model || 'mistral',
           searchMode: state.searchMode,
-          attachments: attachedFiles ? attachedFiles.map(f => f.fileId) : []
+          attachments: documentIds // Use converted document IDs
         },
         (chunk: StreamChunk) => {
           // Handle streaming chunks

@@ -77,11 +77,8 @@ const Sidebar: React.FC = () => {
       {/* Logo/Branding Area */}
       <div className="sidebar__header">
         <div className="sidebar__logo">
-          <div className="sidebar__logo-icon">
-            <ChatIcon />
-          </div>
           <div className="sidebar__logo-content">
-            <h1 className="sidebar__logo-text">AI Assistant</h1>
+            <h1 className="sidebar__logo-text">NoA Aia</h1>
             <div className="sidebar__version">{APP_VERSION}</div>
           </div>
         </div>
