@@ -29,6 +29,7 @@ export interface Chat {
 // File interface for documents
 export interface File {
   id: string;
+  documentId: number; // Add original backend document ID
   name: string;
   originalName: string;
   size: number;
@@ -127,7 +128,7 @@ export interface SendMessageRequest {
   message: string;
   chatId?: string;
   model: string;
-  attachments?: string[];
+  attachments?: number[];
   searchMode: SearchMode;
 }
 
