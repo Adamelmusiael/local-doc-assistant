@@ -125,6 +125,11 @@ export const fileAPI = {
     return response.data;
   },
 
+  // Get preview URL for a document
+  getPreviewUrl: (documentId: number): string => {
+    return `http://localhost:8000/docs/${documentId}/preview`;
+  },
+
   // Resolve file IDs to document IDs for chat attachments
   resolveFileIds: async (fileIds: string[]): Promise<{
     mappings: Array<{
