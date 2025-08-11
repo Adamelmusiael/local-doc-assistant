@@ -42,6 +42,40 @@
         }
       }
 
+      // Attachment styling for dark user messages
+      .chat-message__attachments {
+        border-top-color: rgba(255, 255, 255, 0.15);
+
+        &-title {
+          color: #e5e7eb;
+          opacity: 0.95;
+        }
+      }
+
+      .chat-message__attachment {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        svg {
+          color: #e5e7eb;
+          opacity: 0.9;
+        }
+
+        &-name {
+          color: #f9fafb;
+        }
+
+        &-size {
+          color: #d1d5db;
+          opacity: 0.8;
+        }
+      }
+
       // Show actions on bubble hover
       &:hover .chat-message__actions {
         opacity: 1;
@@ -187,13 +221,14 @@
   &__attachments {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.15);
 
     &-title {
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       margin: 0 0 8px 0;
-      opacity: 0.8;
+      color: #374151;
+      opacity: 0.9;
     }
 
     &-list {
@@ -207,14 +242,23 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.02);
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     font-size: 13px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.12);
+      border-color: rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
 
     svg {
       flex-shrink: 0;
-      opacity: 0.7;
+      opacity: 0.9;
+      color: #374151;
     }
 
     &-info {
@@ -225,13 +269,16 @@
     }
 
     &-name {
-      font-weight: 500;
+      font-weight: 600;
       word-break: break-all;
+      color: #111827;
     }
 
     &-size {
       font-size: 11px;
-      opacity: 0.7;
+      opacity: 0.8;
+      color: #6b7280;
+      font-weight: 500;
     }
   }
 
