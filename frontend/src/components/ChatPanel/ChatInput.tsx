@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { SearchMode } from '../../types';
 import { useChat } from '../../contexts/ChatContext';
 import { useFile } from '../../contexts/FileContext';
+import { useConfidentialityValidation } from '../../hooks/useConfidentialityValidation';
 import FileSelectionModal from './FileSelectionModal';
+import './ChatInput.scss';
 
 // Icons
 const SendIcon = () => (
@@ -27,6 +29,20 @@ const LoadingIcon = () => (
   </svg>
 );
 
+const SecurityIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <path d="M9 12l2 2 4-4"/>
+  </svg>
+);
+
+const BlockIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+  </svg>
+);
+
 interface ChatInputProps {
   selectedModel: string;
   searchMode: SearchMode;
@@ -48,8 +64,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
   
   const { state: chatState, removeSelectedFile } = useChat();
   const { state: fileState } = useFile();
+  const validation = useConfidentialityValidation(selectedModel);
 
-  const canSend = message.trim() && !isLoading;
+  const canSend = message.trim() && !isLoading && validation.isModelCompatible;
 
   // Get selected files info for display
   const selectedFiles = fileState.files.filter(file => 
@@ -99,6 +116,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <div className="chat-input__attachments">
             {selectedFiles.map((file) => (
               <div key={file.id} className="chat-input__attachment">
+                {file.isConfidential && <SecurityIcon />}
                 <span className="chat-input__attachment-name">{file.originalName}</span>
                 <span className="chat-input__attachment-size">{formatFileSize(file.size)}</span>
                 <button
@@ -111,6 +129,22 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Confidentiality Warning */}
+        {validation.warningMessage && (
+          <div className="chat-input__warning">
+            <SecurityIcon />
+            <span className="chat-input__warning-text">{validation.warningMessage}</span>
+          </div>
+        )}
+
+        {/* Block Message */}
+        {validation.blockedReason && (
+          <div className="chat-input__error">
+            <BlockIcon />
+            <span className="chat-input__error-text">{validation.blockedReason}</span>
           </div>
         )}
 

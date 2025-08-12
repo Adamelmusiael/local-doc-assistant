@@ -109,9 +109,9 @@ const FileSelectionModal: React.FC<FileSelectionModalProps> = ({ isOpen, onClose
                       {formatFileSize(file.size)} • {formatDate(file.uploadDate)}
                     </div>
                   </div>
-                  <div className="file-selection-modal__file-status">
-                    <span className="file-selection-modal__file-status-badge">
-                      Processed
+                  <div className="file-selection-modal__file-privacy">
+                    <span className={`file-selection-modal__privacy-badge ${file.isPublic ? 'public' : 'confidential'}`}>
+                      {file.isPublic ? 'Public' : 'Confidential'}
                     </span>
                   </div>
                 </div>

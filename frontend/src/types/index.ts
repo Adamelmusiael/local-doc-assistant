@@ -91,6 +91,8 @@ export interface Model {
   maxTokens: number;
   isAvailable: boolean;
   default?: boolean;
+  isLocal?: boolean;
+  canAccessConfidential?: boolean;
 }
 
 // Search mode enum

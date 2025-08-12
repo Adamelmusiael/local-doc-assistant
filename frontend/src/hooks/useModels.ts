@@ -17,44 +17,57 @@ export const useModels = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await modelAPI.getModels() as unknown as ModelsResponse;
       
-      if (response.models) {
-        setModels(response.models);
-        if (response.default_model) {
-          setDefaultModel(response.default_model);
+      try {
+        const response = await modelAPI.getModels() as unknown as ModelsResponse;
+        
+        if (response.models) {
+          setModels(response.models);
+          if (response.default_model) {
+            setDefaultModel(response.default_model);
+          }
+          return;
         }
-      } else {
-        // Fallback to mock data if API fails
-        const mockModels: Model[] = [
-          {
-            id: "mistral",
-            name: "Mistral",
-            description: "Local model - fast and efficient",
-            provider: "Local",
-            maxTokens: 4096,
-            isAvailable: true,
-            default: true,
-          },
-          {
-            id: "gpt-4o",
-            name: "GPT-4o",
-            description: "Most capable OpenAI model",
-            provider: "OpenAI",
-            maxTokens: 8192,
-            isAvailable: true,
-          },
-          {
-            id: "gpt-3.5-turbo",
-            name: "GPT-3.5 Turbo",
-            description: "Fast and efficient OpenAI model",
-            provider: "OpenAI",
-            maxTokens: 4096,
-            isAvailable: true,
-          },
-        ];
-        setModels(mockModels);
+      } catch (apiError) {
+        console.warn('API call failed, using mock data:', apiError);
       }
+      
+      // Fallback to mock data if API fails
+      const mockModels: Model[] = [
+        {
+          id: "mistral",
+          name: "Mistral",
+          description: "Local model - fast and efficient",
+          provider: "Local",
+          maxTokens: 4096,
+          isAvailable: true,
+          default: true,
+          isLocal: true,
+          canAccessConfidential: true,
+        },
+        {
+          id: "gpt-4o",
+          name: "GPT-4o",
+          description: "Most capable OpenAI model",
+          provider: "OpenAI",
+          maxTokens: 8192,
+          isAvailable: true,
+          isLocal: false,
+          canAccessConfidential: false,
+        },
+        {
+          id: "gpt-3.5-turbo",
+          name: "GPT-3.5 Turbo",
+          description: "Fast and efficient OpenAI model",
+          provider: "OpenAI",
+          maxTokens: 4096,
+          isAvailable: true,
+          isLocal: false,
+          canAccessConfidential: false,
+        },
+      ];
+      setModels(mockModels);
+      setDefaultModel('mistral');
     } catch (err) {
       console.error('Failed to fetch models:', err);
       setError('Failed to load models');
@@ -69,6 +82,8 @@ export const useModels = () => {
           maxTokens: 4096,
           isAvailable: true,
           default: true,
+          isLocal: true,
+          canAccessConfidential: true,
         },
         {
           id: "gpt-4o",
@@ -77,6 +92,8 @@ export const useModels = () => {
           provider: "OpenAI",
           maxTokens: 8192,
           isAvailable: true,
+          isLocal: false,
+          canAccessConfidential: false,
         },
         {
           id: "gpt-3.5-turbo",
@@ -85,9 +102,12 @@ export const useModels = () => {
           provider: "OpenAI",
           maxTokens: 4096,
           isAvailable: true,
+          isLocal: false,
+          canAccessConfidential: false,
         },
       ];
       setModels(mockModels);
+      setDefaultModel('mistral');
     } finally {
       setLoading(false);
     }
@@ -97,11 +117,30 @@ export const useModels = () => {
     fetchModels();
   }, []);
 
+  // Helper function to check if a model can access confidential data
+  const canModelAccessConfidential = (modelId: string): boolean => {
+    const model = models.find(m => m.id === modelId);
+    return model?.canAccessConfidential ?? false;
+  };
+
+  // Helper function to get local models only
+  const getLocalModels = (): Model[] => {
+    return models.filter(model => model.isLocal);
+  };
+
+  // Helper function to get external models only
+  const getExternalModels = (): Model[] => {
+    return models.filter(model => !model.isLocal);
+  };
+
   return {
     models,
     loading,
     error,
     defaultModel,
     refetch: fetchModels,
+    canModelAccessConfidential,
+    getLocalModels,
+    getExternalModels,
   };
 };

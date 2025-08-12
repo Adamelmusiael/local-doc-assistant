@@ -1290,17 +1290,29 @@
     color: #6b7280;
   }
 
-  &__file-status {
+  &__file-privacy {
+    display: flex;
+    align-items: center;
     flex-shrink: 0;
   }
 
-  &__file-status-badge {
-    background: #10b981;
-    color: #ffffff;
+  &__privacy-badge {
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.public {
+      background-color: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    &.confidential {
+      background-color: #fef3c7;
+      color: #d97706;
+    }
   }
 
   &__footer {

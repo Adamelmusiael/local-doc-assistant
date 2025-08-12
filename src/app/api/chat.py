@@ -14,7 +14,7 @@ import os
 import openai
 import json
 from datetime import datetime
-from src.config.config_loader import get_default_model, get_allowed_models
+from src.config.config_loader import get_default_model, get_allowed_models, get_local_models, get_external_models
 # Add the src directory to Python path
 src_path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(src_path))
@@ -538,16 +538,19 @@ async def get_available_models():
     Returns all models defined in the config file with default model marked.
     """
     try:
-        from config import get_allowed_models, get_openai_models, get_default_model
+        from config import get_allowed_models, get_openai_models, get_default_model, get_local_models, get_external_models
         
         allowed_models = get_allowed_models()
         openai_models = get_openai_models()
+        local_models = get_local_models()
+        external_models = get_external_models()
         default_model = get_default_model()
         
         models = []
         
         # Add default model first (Mistral)
         if default_model in allowed_models:
+            is_local = default_model in local_models
             models.append({
                 "id": default_model,
                 "name": default_model.title(),
@@ -555,13 +558,16 @@ async def get_available_models():
                 "provider": "Local",
                 "maxTokens": 4096,
                 "isAvailable": True,
-                "default": True
+                "default": True,
+                "isLocal": is_local,
+                "canAccessConfidential": is_local
             })
         
         # Add other models
         for model in allowed_models:
             if model != default_model:  # Skip default model as it's already added
                 is_openai = model in openai_models
+                is_local = model in local_models
                 models.append({
                     "id": model,
                     "name": model.replace("-", " ").title(),
@@ -569,7 +575,9 @@ async def get_available_models():
                     "provider": "OpenAI" if is_openai else "Local",
                     "maxTokens": 8192 if is_openai else 4096,
                     "isAvailable": True,
-                    "default": False
+                    "default": False,
+                    "isLocal": is_local,
+                    "canAccessConfidential": is_local
                 })
         
         return {
