@@ -34,7 +34,7 @@ def get_client():
     """Get Qdrant client instance"""
     return QdrantClient(QDRANT_URL)
 
-def search_documents(query: str, collection_name="documents", limit: int = 5) -> List[Dict]:
+def search_documents(query: str, collection_name="documents", limit: int = 5, model_name: str = None) -> List[Dict]:
     """
     Main search function - finds documents similar to the given query.
     
@@ -42,9 +42,10 @@ def search_documents(query: str, collection_name="documents", limit: int = 5) ->
         query (str): Search query text
         collection_name (str): Name of the Qdrant collection to search in
         limit (int): Maximum number of results to return (default: 5)
+        model_name (str): Name of the model requesting access (for confidentiality filtering)
     
     Returns:
-        List[Dict]: List of search results with scores and metadata
+        List[Dict]: List of search results with scores and metadata (filtered by confidentiality)
     """
     try:
         # Convert query text to vector
@@ -78,6 +79,16 @@ def search_documents(query: str, collection_name="documents", limit: int = 5) ->
             }
             results.append(result)
         
+        # Apply confidentiality filtering if model_name is provided
+        if model_name:
+            try:
+                from security import validate_document_access
+                results = validate_document_access(results, model_name)
+            except ImportError:
+                # If security module is not available, continue without filtering
+                # This ensures backward compatibility during development
+                pass
+        
         return results
         
     except Exception as e:
@@ -88,7 +99,8 @@ def search_with_filters(
     query: str, 
     limit: int = 5, 
     filters: Optional[Dict[str, str]] = None,
-    document_ids: Optional[List[int]] = None
+    document_ids: Optional[List[int]] = None,
+    model_name: str = None
 ) -> List[Dict]:
     """
     Advanced search function with metadata filtering and document ID filtering.
@@ -98,6 +110,7 @@ def search_with_filters(
         limit (int): Maximum number of results to return
         filters (Dict): Optional filters for metadata (e.g., {"department": "HR"})
         document_ids (List[int]): Optional list of document IDs to search in
+        model_name (str): Name of the model requesting access (for confidentiality filtering)
     
     Returns:
         List[Dict]: Filtered search results
@@ -171,6 +184,15 @@ def search_with_filters(
             }
             results.append(result)
         
+        # Apply confidentiality filtering if model_name is provided
+        if model_name:
+            try:
+                from security import validate_document_access
+                results = validate_document_access(results, model_name)
+            except ImportError:
+                # If security module is not available, continue without filtering
+                pass
+        
         return results
         
     except Exception as e:
@@ -180,10 +202,20 @@ def search_with_filters(
 def search_documents_by_ids(
     query: str, 
     document_ids: List[int],
-    limit: int = 5
+    limit: int = 5,
+    model_name: str = None
 ) -> List[Dict]:
     """
     Search only within specified document IDs using semantic similarity.
+    
+    Args:
+        query (str): Search query text
+        document_ids (List[int]): List of document IDs to search within
+        limit (int): Maximum number of results to return
+        model_name (str): Name of the model requesting access (for confidentiality filtering)
+    
+    Returns:
+        List[Dict]: Search results filtered by document IDs and confidentiality
     """
     try:
         query_vector = embed_text(query)
@@ -226,6 +258,15 @@ def search_documents_by_ids(
                 }
             }
             results.append(result)
+        
+        # Apply confidentiality filtering if model_name is provided
+        if model_name:
+            try:
+                from security import validate_document_access
+                results = validate_document_access(results, model_name)
+            except ImportError:
+                # If security module is not available, continue without filtering
+                pass
         
         return results
         

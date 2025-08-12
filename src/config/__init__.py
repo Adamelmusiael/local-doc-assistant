@@ -3,7 +3,10 @@ from .config_loader import (
     get_openai_models,
     get_allowed_models,
     get_default_model,
-    get_confidentiality_options
+    get_confidentiality_options,
+    is_local_model,
+    get_local_models,
+    get_external_models
 )
 
 __all__ = [
@@ -11,5 +14,8 @@ __all__ = [
     'get_openai_models',
     'get_allowed_models', 
     'get_default_model',
-    'get_confidentiality_options'
+    'get_confidentiality_options',
+    'is_local_model',
+    'get_local_models',
+    'get_external_models'
 ]

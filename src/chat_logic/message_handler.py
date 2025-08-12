@@ -151,6 +151,16 @@ def handle_chat_message(
     if model.lower() not in [m.lower() for m in allowed_models]:
         raise ValueError(f"Model '{model}' is not supported. Please choose one of: {allowed_models}")
     
+    # Confidentiality validation
+    try:
+        from security import validate_model_document_compatibility
+        is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
+        if not is_valid:
+            raise ValueError(error_message)
+    except ImportError:
+        # If security module is not available, continue without validation
+        pass
+    
     # 1. Get history
     chat_history = get_chat_history(session_id)
     
@@ -160,7 +170,8 @@ def handle_chat_message(
         top_chunks = search_documents_by_ids(
             user_question,
             selected_document_ids,
-            limit=5
+            limit=5,
+            model_name=model
         )
         
     elif search_mode == "hybrid" and selected_document_ids:
@@ -168,18 +179,19 @@ def handle_chat_message(
         selected_chunks = search_documents_by_ids(
             user_question,
             selected_document_ids,
-            limit=3
+            limit=3,
+            model_name=model
         )
         
         # Get additional chunks from all documents
-        additional_chunks = search_documents(user_question, limit=2)
+        additional_chunks = search_documents(user_question, limit=2, model_name=model)
         
         # Combine results (selected chunks first, then additional)
         top_chunks = selected_chunks + additional_chunks
         
     else:
         # Standard semantic search across all documents
-        top_chunks = search_documents(user_question, limit=5)
+        top_chunks = search_documents(user_question, limit=5, model_name=model)
     
     # 3. Build prompt
     prompt = build_prompt(top_chunks, chat_history, user_question)
@@ -229,6 +241,21 @@ async def handle_chat_message_stream(
             }
             return
         
+        # Confidentiality validation
+        try:
+            from security import validate_model_document_compatibility
+            is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
+            if not is_valid:
+                yield {
+                    "type": "error",
+                    "content": error_message
+                }
+                return
+        except ImportError:
+            # If security module is not available, continue without validation
+            # This ensures backward compatibility during development
+            pass
+        
         # Send status update
         yield {"type": "status", "content": "Searching documents..."}
         
@@ -240,18 +267,20 @@ async def handle_chat_message_stream(
             top_chunks = search_documents_by_ids(
                 user_question,
                 selected_document_ids,
-                limit=5
+                limit=5,
+                model_name=model
             )
         elif search_mode == "hybrid" and selected_document_ids:
             selected_chunks = search_documents_by_ids(
                 user_question,
                 selected_document_ids,
-                limit=3
+                limit=3,
+                model_name=model
             )
-            additional_chunks = search_documents(user_question, limit=2)
+            additional_chunks = search_documents(user_question, limit=2, model_name=model)
             top_chunks = selected_chunks + additional_chunks
         else:
-            top_chunks = search_documents(user_question, limit=5)
+            top_chunks = search_documents(user_question, limit=5, model_name=model)
         
         # Send sources info
         yield {

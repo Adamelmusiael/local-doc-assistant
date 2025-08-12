@@ -67,3 +67,59 @@ def get_confidentiality_options() -> List[str]:
     if options_str:
         return [option.strip() for option in options_str.split(',')]
     return []
+
+
+def get_local_models() -> List[str]:
+    """
+    Get list of all local models that can access confidential data.
+    
+    Returns:
+        List[str]: List of local model names from config
+    """
+    config = load_config()
+    models_str = config.get('LOCAL_MODELS', '')
+    if models_str:
+        return [model.strip() for model in models_str.split(',')]
+    return []
+
+
+def get_external_models() -> List[str]:
+    """
+    Get list of all external models that cannot access confidential data.
+    
+    Returns:
+        List[str]: List of external model names from config
+    """
+    config = load_config()
+    models_str = config.get('EXTERNAL_MODELS', '')
+    if models_str:
+        return [model.strip() for model in models_str.split(',')]
+    return []
+
+
+def is_local_model(model_name: str) -> bool:
+    """
+    Determine if a model is local (can access confidential data) or external.
+    
+    Args:
+        model_name (str): The name of the model to check
+        
+    Returns:
+        bool: True if model is local and can access confidential data, False if external
+    """
+    if not model_name:
+        return False
+    
+    # Check if model is in the local models list
+    local_models = get_local_models()
+    if model_name.lower() in {m.lower() for m in local_models}:
+        return True
+    
+    # Check if model is in the external models list
+    external_models = get_external_models()
+    if model_name.lower() in {m.lower() for m in external_models}:
+        return False
+    
+    # If model is not in either list, default to local for safety
+    # (assuming unknown models are local/internal)
+    return True

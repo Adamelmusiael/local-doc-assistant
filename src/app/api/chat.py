@@ -150,6 +150,17 @@ async def chat_message_with_metadata(session_id: int, request: ChatRequest):
                     model = chat_session.llm_model
                 else:
                     model = DEFAULT_MODEL
+        
+        # Confidentiality validation 
+        try:
+            from security import validate_model_document_compatibility
+            is_valid, error_message = validate_model_document_compatibility(model, request.selected_document_ids)
+            if not is_valid:
+                raise HTTPException(status_code=403, detail=error_message)
+        except ImportError:
+            # If security module is not available, continue without validation
+            pass
+            
         result = handle_chat_message(
             session_id,
             request.question,
@@ -184,6 +195,20 @@ async def stream_chat_message(session_id: int, request: ChatRequest):
                         model = chat_session.llm_model
                     else:
                         model = DEFAULT_MODEL
+            
+            try:
+                from security import validate_model_document_compatibility
+                is_valid, error_message = validate_model_document_compatibility(model, request.selected_document_ids)
+                if not is_valid:
+                    error_data = {
+                        "type": "error",
+                        "error": error_message
+                    }
+                    yield f"data: {json.dumps(error_data)}\n\n"
+                    return
+            except ImportError:
+                # If security module is not available, continue without validation
+                pass
             
             # Send initial metadata
             yield f"data: {json.dumps({'type': 'start', 'session_id': session_id, 'model': model})}\n\n"
