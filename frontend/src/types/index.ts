@@ -26,6 +26,9 @@ export interface Chat {
   isActive?: boolean;
 }
 
+// Re-export chat context types
+export type { ChatState, ChatAction, ChatContextType } from './chat';
+
 // File interface for documents
 export interface File {
   id: string;
