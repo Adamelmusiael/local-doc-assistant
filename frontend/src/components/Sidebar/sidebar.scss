@@ -331,6 +331,11 @@
     min-width: 120px;
     overflow: hidden;
     pointer-events: auto;
+
+    &--above {
+      top: auto;
+      bottom: 100%;
+    }
   }
 
   &__chat-menu-item {

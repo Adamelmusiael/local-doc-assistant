@@ -46,9 +46,11 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(chat.title);
+  const [menuPositionAbove, setMenuPositionAbove] = useState(false);
   const { activeMenu, setActiveMenu, closeAllMenus } = useMenu();
   
   const menuId = `chat-session-${chat.id}`;
+  const chatItemRef = React.useRef<HTMLDivElement>(null);
   const menuRef = useClickOutside<HTMLDivElement>(() => {
     if (showMenu) {
       setShowMenu(false);
@@ -63,13 +65,34 @@ const ChatSession: React.FC<ChatSessionProps> = ({
     }
   }, [activeMenu, menuId, showMenu]);
 
+  const calculateMenuPosition = () => {
+    if (!chatItemRef.current) return false;
+    
+    const chatItem = chatItemRef.current;
+    const rect = chatItem.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    
+    // Estimate menu height (based on 2 menu items + padding)
+    const menuHeight = 80; // Approximate height for 2 menu items
+    const spaceBelow = viewportHeight - rect.bottom;
+    
+    // If there's insufficient space below, position above
+    return spaceBelow < menuHeight;
+  };
+
   const handleMenuToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (showMenu) {
       setShowMenu(false);
       setActiveMenu(null);
+      setMenuPositionAbove(false);
     } else {
       closeAllMenus(); // Close other menus first
+      
+      // Calculate menu position before showing
+      const shouldPositionAbove = calculateMenuPosition();
+      setMenuPositionAbove(shouldPositionAbove);
+      
       setShowMenu(true);
       setActiveMenu(menuId);
     }
@@ -127,6 +150,7 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   return (
     <>
       <div
+        ref={chatItemRef}
         className={`sidebar__chat-item ${isActive ? 'active' : ''} ${showMenu ? 'menu-open' : ''}`}
         onClick={() => onSelect(chat.id)}
       >
@@ -171,7 +195,10 @@ const ChatSession: React.FC<ChatSessionProps> = ({
         </div>
 
         {showMenu && (
-          <div className="sidebar__chat-menu" ref={menuRef}>
+          <div 
+            className={`sidebar__chat-menu ${menuPositionAbove ? 'sidebar__chat-menu--above' : ''}`} 
+            ref={menuRef}
+          >
             <button
               className="sidebar__chat-menu-item"
               onClick={handleRename}
