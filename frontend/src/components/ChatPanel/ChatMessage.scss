@@ -81,6 +81,11 @@
         opacity: 1;
       }
     }
+
+    .chat-message__bubble:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+      transform: translateY(-1px) !important;
+    }
   }
 
   // Assistant messages on the left  
@@ -125,6 +130,12 @@
         opacity: 1;
       }
     }
+
+    
+    .chat-message__bubble:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+      transform: translateY(-1px) !important;
+    }
   }
 
   &__bubble {
@@ -133,9 +144,7 @@
     transition: all 0.2s ease;
     position: relative;
 
-    &:hover {
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
+    
   }
 
   &__header {
