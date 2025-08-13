@@ -123,3 +123,38 @@ def is_local_model(model_name: str) -> bool:
     # If model is not in either list, default to local for safety
     # (assuming unknown models are local/internal)
     return True
+
+
+def get_model_mapping() -> dict:
+    """
+    Get the mapping between friendly model names and actual Ollama model names.
+    For better readability.
+    Returns:
+        dict: Dictionary mapping friendly names to Ollama names
+    """
+    config = load_config()
+    mapping_str = config.get('MODEL_MAPPING', '')
+    mapping = {}
+    
+    if mapping_str:
+        pairs = mapping_str.split(',')
+        for pair in pairs:
+            if '=' in pair:
+                friendly_name, ollama_name = pair.split('=', 1)
+                mapping[friendly_name.strip()] = ollama_name.strip()
+    
+    return mapping
+
+
+def get_ollama_model_name(friendly_name: str) -> str:
+    """
+    Get the actual Ollama model name for a friendly model name.
+    
+    Args:
+        friendly_name (str): The friendly model name used in the application
+        
+    Returns:
+        str: The actual Ollama model name, or the friendly name if no mapping exists
+    """
+    mapping = get_model_mapping()
+    return mapping.get(friendly_name, friendly_name)

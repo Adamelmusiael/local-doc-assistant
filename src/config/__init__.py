@@ -6,7 +6,9 @@ from .config_loader import (
     get_confidentiality_options,
     is_local_model,
     get_local_models,
-    get_external_models
+    get_external_models,
+    get_model_mapping,
+    get_ollama_model_name
 )
 
 __all__ = [
@@ -17,5 +19,7 @@ __all__ = [
     'get_confidentiality_options',
     'is_local_model',
     'get_local_models',
-    'get_external_models'
+    'get_external_models',
+    'get_model_mapping',
+    'get_ollama_model_name'
 ]

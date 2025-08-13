@@ -546,39 +546,91 @@ async def get_available_models():
         external_models = get_external_models()
         default_model = get_default_model()
         
-        models = []
-        
-        # Add default model first (Mistral)
-        if default_model in allowed_models:
-            is_local = default_model in local_models
-            models.append({
-                "id": default_model,
-                "name": default_model.title(),
+        # Define detailed model metadata
+        model_definitions = {
+            "mistral": {
+                "name": "Mistral",
                 "description": "Local model - fast and efficient",
                 "provider": "Local",
                 "maxTokens": 4096,
+            },
+            "llama3.1-8b-128k": {
+                "name": "Llama 3.1 8B",
+                "description": "Advanced local model with 128K context window",
+                "provider": "Local",
+                "maxTokens": 128000,
+            },
+            "qwen2.5-1m": {
+                "name": "Qwen 2.5 1M",
+                "description": "Large context local model with 1M tokens - ideal for long documents",
+                "provider": "Local",
+                "maxTokens": 1000000,
+            },
+            "gpt-4o": {
+                "name": "GPT-4o",
+                "description": "Most capable OpenAI model",
+                "provider": "OpenAI",
+                "maxTokens": 8192,
+            },
+            "gpt-4-turbo": {
+                "name": "GPT-4 Turbo",
+                "description": "Enhanced OpenAI model with improved performance",
+                "provider": "OpenAI",
+                "maxTokens": 8192,
+            },
+            "gpt-3.5-turbo": {
+                "name": "GPT-3.5 Turbo",
+                "description": "Fast and efficient OpenAI model",
+                "provider": "OpenAI",
+                "maxTokens": 4096,
+            },
+            "gpt-4.1": {
+                "name": "GPT-4.1",
+                "description": "Latest OpenAI model",
+                "provider": "OpenAI",
+                "maxTokens": 8192,
+            },
+            "gpt-4.1-mini": {
+                "name": "GPT-4.1 Mini",
+                "description": "Compact version of GPT-4.1",
+                "provider": "OpenAI",
+                "maxTokens": 4096,
+            },
+            "gpt-4.1-nano": {
+                "name": "GPT-4.1 Nano",
+                "description": "Ultra-compact OpenAI model",
+                "provider": "OpenAI",
+                "maxTokens": 2048,
+            }
+        }
+        
+        models = []
+        
+        # Process all allowed models
+        for model in allowed_models:
+            is_openai = model in openai_models
+            is_local = model in local_models
+            is_default = model == default_model
+            
+            # Get model definition or use fallback
+            model_def = model_definitions.get(model, {
+                "name": model.replace("-", " ").replace(".", " ").title(),
+                "description": f"{'OpenAI' if is_openai else 'Local'} model",
+                "provider": "OpenAI" if is_openai else "Local",
+                "maxTokens": 8192 if is_openai else 4096,
+            })
+            
+            models.append({
+                "id": model,
+                "name": model_def["name"],
+                "description": model_def["description"],
+                "provider": model_def["provider"],
+                "maxTokens": model_def["maxTokens"],
                 "isAvailable": True,
-                "default": True,
+                "default": is_default,
                 "isLocal": is_local,
                 "canAccessConfidential": is_local
             })
-        
-        # Add other models
-        for model in allowed_models:
-            if model != default_model:  # Skip default model as it's already added
-                is_openai = model in openai_models
-                is_local = model in local_models
-                models.append({
-                    "id": model,
-                    "name": model.replace("-", " ").title(),
-                    "description": f"{'OpenAI' if is_openai else 'Local'} model",
-                    "provider": "OpenAI" if is_openai else "Local",
-                    "maxTokens": 8192 if is_openai else 4096,
-                    "isAvailable": True,
-                    "default": False,
-                    "isLocal": is_local,
-                    "canAccessConfidential": is_local
-                })
         
         return {
             "models": models,

@@ -41,14 +41,18 @@ def generate_response(prompt, model="mistral"):
         return response.choices[0].message.content
     # Local model (e.g. Mistral)
     try:
+        # Get the actual Ollama model name
+        from config import get_ollama_model_name
+        ollama_model = get_ollama_model_name(model)
+        
         response = requests.post(
             LLM_API_URL,
-            json={"model": model, "prompt": prompt, "stream": False}
+            json={"model": ollama_model, "prompt": prompt, "stream": False}
         )
         if response.status_code != 200:
             return f"[Model error: {response.status_code}]"
         response_data = response.json()
-        print("model local", model)
+        print(f"model local: {model} -> {ollama_model}")
         return response_data.get("response", "")
     except Exception as e:
         return f"[Model error: {str(e)}]"
@@ -81,9 +85,13 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
     else:
         # Local model (Ollama) streaming
         try:
+            # Get the actual Ollama model name
+            from config import get_ollama_model_name
+            ollama_model = get_ollama_model_name(model)
+            
             response = requests.post(
                 LLM_API_URL,
-                json={"model": model, "prompt": prompt, "stream": True},
+                json={"model": ollama_model, "prompt": prompt, "stream": True},
                 stream=True
             )
             
