@@ -3,29 +3,7 @@ import { Chat } from '../../types';
 import { formatDate } from '../../utils/dateUtils';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { useMenu } from '../../contexts/MenuContext';
-
-// Icons
-const MoreIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="1"/>
-    <circle cx="19" cy="12" r="1"/>
-    <circle cx="5" cy="12" r="1"/>
-  </svg>
-);
-
-const EditIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-    <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-  </svg>
-);
-
-const DeleteIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="3,6 5,6 21,6"/>
-    <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-  </svg>
-);
+import { MoreIcon, EditIcon, DeleteIcon } from '../icons';
 
 interface ChatSessionProps {
   chat: Chat;
@@ -190,7 +168,7 @@ const ChatSession: React.FC<ChatSessionProps> = ({
             onClick={handleMenuToggle}
             title="More options"
           >
-            <MoreIcon />
+            <MoreIcon size={16} />
           </button>
         </div>
 
@@ -203,14 +181,14 @@ const ChatSession: React.FC<ChatSessionProps> = ({
               className="sidebar__chat-menu-item"
               onClick={handleRename}
             >
-              <EditIcon />
+              <EditIcon size={14} />
               Rename
             </button>
             <button
               className="sidebar__chat-menu-item delete"
               onClick={handleDelete}
             >
-              <DeleteIcon />
+              <DeleteIcon size={14} />
               Delete
             </button>
           </div>

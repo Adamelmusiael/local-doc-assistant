@@ -2,27 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Model } from '../../types';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { useMenu } from '../../contexts/MenuContext';
-
-// Icons
-const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
-    <polyline points="6,9 12,15 18,9"/>
-  </svg>
-);
-
-const InfoIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="12" y1="16" x2="12" y2="12"/>
-    <line x1="12" y1="8" x2="12.01" y2="8"/>
-  </svg>
-);
-
-const CheckIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
-    <polyline points="20,6 9,17 4,12"/>
-  </svg>
-);
+import { ChevronDownIcon, InfoIcon, CheckIcon } from '../icons';
 
 interface ModelSelectorProps {
   models: Model[];
@@ -120,7 +100,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
               </span>
             )}
           </div>
-          <ChevronDownIcon className={`model-selector__chevron ${showDropdown ? 'expanded' : ''}`} />
+          <ChevronDownIcon size={16} className={`model-selector__chevron ${showDropdown ? 'expanded' : ''}`} />
         </button>
 
         {showInfo && selectedModelData && (
@@ -129,7 +109,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             onClick={handleInfoToggle}
             title="Model information"
           >
-            <InfoIcon />
+            <InfoIcon size={16} />
           </button>
         )}
       </div>
@@ -195,7 +175,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                         <span className="model-selector__dropdown-item-default">Default</span>
                       )}
                       {status === 'selected' && (
-                        <CheckIcon className="model-selector__dropdown-item-check" />
+                        <CheckIcon size={16} className="model-selector__dropdown-item-check" />
                       )}
                     </div>
                     <div className="model-selector__dropdown-item-details">

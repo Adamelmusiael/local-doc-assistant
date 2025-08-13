@@ -5,6 +5,7 @@ import {
   FileWithProgress, 
   getProcessingPhaseLabel
 } from '../../mock/fileUploadMocks';
+import { FileUploadIcon } from '../icons';
 import './FileUpload.scss';
 
 interface FileUploadProps {
@@ -278,11 +279,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose }) => {
           onClick={() => fileInputRef.current?.click()}
         >
           <div className="file-upload__drop-content">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7,10 12,15 17,10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
+            <FileUploadIcon size={48} />
             <h3 className="file-upload__drop-title">Drop files here or click to browse</h3>
             <p className="file-upload__drop-subtitle">
               Only PDF files are supported (max 50MB per file)

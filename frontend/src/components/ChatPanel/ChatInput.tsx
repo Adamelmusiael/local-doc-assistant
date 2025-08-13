@@ -4,44 +4,8 @@ import { useChat } from '../../contexts/ChatContext';
 import { useFile } from '../../contexts/FileContext';
 import { useConfidentialityValidation } from '../../hooks/useConfidentialityValidation';
 import FileSelectionModal from './FileSelectionModal';
+import { SendIcon, AttachIcon, LoadingIcon, SecurityIcon, BlockIcon } from '../icons';
 import './ChatInput.scss';
-
-// Icons
-const SendIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="22" y1="2" x2="11" y2="13"/>
-    <polygon points="22,2 15,22 11,13 2,9"/>
-  </svg>
-);
-
-const AttachIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-  </svg>
-);
-
-const LoadingIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" strokeDasharray="31.416" strokeDashoffset="31.416">
-      <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-      <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-    </circle>
-  </svg>
-);
-
-const SecurityIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    <path d="M9 12l2 2 4-4"/>
-  </svg>
-);
-
-const BlockIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-  </svg>
-);
 
 interface ChatInputProps {
   selectedModel: string;

@@ -3,6 +3,7 @@ import { File, ProcessingStatus } from '../../types';
 import { useFile } from '../../contexts/FileContext';
 import { simulateFileDownload } from '../../mock/fileUploadMocks';
 import { fileAPI } from '../../services/api';
+import { FileIcon, DeleteIcon, EyeIcon, DownloadIcon, CloseIcon } from '../icons';
 import './FileList.scss';
 
 interface FileListProps {
@@ -110,10 +111,7 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
     return (
       <div className="file-list">
         <div className="file-list__empty">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14,2 14,8 20,8"/>
-          </svg>
+          <FileIcon size={64} />
           <h3 className="file-list__empty-title">No files uploaded yet</h3>
           <p className="file-list__empty-subtitle">
             Upload your first document to get started with file management
@@ -149,10 +147,7 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
                 className="file-list__bulk-delete-btn"
                 onClick={handleDelete}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="3,6 5,6 21,6"/>
-                  <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-                </svg>
+                <DeleteIcon size={16} />
                 Delete Selected
               </button>
             </div>
@@ -173,10 +168,7 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
                 />
               </label>
               <div className="file-list__file-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                </svg>
+                <FileIcon size={24} />
               </div>
               <div className="file-list__file-info">
                 <div className="file-list__file-name">{file.originalName}</div>
@@ -213,21 +205,14 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
                   onClick={() => handlePreview(file)}
                   title="Preview"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
+                  <EyeIcon size={16} />
                 </button>
                 <button
                   className="file-list__action-btn"
                   onClick={() => handleDownload(file)}
                   title="Download"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7,10 12,15 17,10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
+                  <DownloadIcon size={16} />
                 </button>
                 <button
                   className="file-list__action-btn file-list__action-btn--delete"
@@ -237,10 +222,7 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
                   }}
                   title="Delete"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="3,6 5,6 21,6"/>
-                    <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-                  </svg>
+                  <DeleteIcon size={16} />
                 </button>
               </div>
             </div>
@@ -253,11 +235,7 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
         <div className="file-list__delete-modal">
           <div className="file-list__delete-content">
             <div className="file-list__delete-header">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-              </svg>
+              <CloseIcon size={24} />
               <h3 className="file-list__delete-title">Delete Files</h3>
             </div>
             <p className="file-list__delete-message">

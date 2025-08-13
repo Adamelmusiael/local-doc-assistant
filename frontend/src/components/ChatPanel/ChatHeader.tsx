@@ -2,21 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Model, SearchMode } from '../../types';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { useMenu } from '../../contexts/MenuContext';
-
-// Icons
-const MenuIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <line x1="3" y1="12" x2="21" y2="12"/>
-    <line x1="3" y1="18" x2="21" y2="18"/>
-  </svg>
-);
-
-const ChevronDownIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="6,9 12,15 18,9"/>
-  </svg>
-);
+import { MenuIcon, ChevronDownIcon } from '../icons';
 
 interface ChatHeaderProps {
   selectedModel: string;
@@ -116,7 +102,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           onClick={onToggleSidebar}
           title="Toggle sidebar"
         >
-          <MenuIcon />
+          <MenuIcon size={20} />
         </button>
         
         <div className="chat-header__model-selector">
@@ -127,7 +113,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             <span className="chat-header__model-name">
               {selectedModelData?.name || "Select Model"}
             </span>
-            <ChevronDownIcon />
+            <ChevronDownIcon size={16} />
           </button>
           
           {showModelDropdown && (
@@ -157,7 +143,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             onClick={handleSearchModeDropdownToggle}
           >
             <span>{searchModeLabels[searchMode]}</span>
-            <ChevronDownIcon />
+            <ChevronDownIcon size={16} />
           </button>
           
           {showSearchModeDropdown && (
