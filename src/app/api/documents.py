@@ -84,7 +84,7 @@ class DocumentResponse(BaseModel):
     confidentiality: str
     department: Optional[str]
     client: Optional[str]
-    file_path: str
+    file_path: Optional[str]
     file_size: Optional[int]  # file size in bytes
     file_size_formatted: Optional[str]  # human-readable file size
     created_at: Optional[str]
@@ -97,7 +97,7 @@ class DocumentDetailResponse(BaseModel):
     confidentiality: str
     department: Optional[str]
     client: Optional[str]
-    file_path: str
+    file_path: Optional[str]
     file_exists: bool
     file_size: Optional[int]  # file size in bytes
     file_size_formatted: Optional[str]  # human-readable file size
