@@ -200,6 +200,32 @@
       cursor: not-allowed;
       transform: none;
     }
+
+    &--confirmed {
+      background: #059669;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: #047857;
+      }
+
+      &:active:not(:disabled) {
+        background: #065f46;
+      }
+    }
+
+    &--warning {
+      background: #f59e0b;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: #d97706;
+      }
+
+      &:active:not(:disabled) {
+        background: #b45309;
+      }
+    }
   }
 }
 

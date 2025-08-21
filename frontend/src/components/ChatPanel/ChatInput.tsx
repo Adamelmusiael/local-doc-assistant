@@ -4,6 +4,7 @@ import { useChat } from '../../contexts/ChatContext';
 import { useFile } from '../../contexts/FileContext';
 import { useConfidentialityValidation } from '../../hooks/useConfidentialityValidation';
 import FileSelectionModal from './FileSelectionModal';
+import ConfidentialFileWarningModal from './ConfidentialFileWarningModal';
 import { SendIcon, AttachIcon, LoadingIcon, SecurityIcon, BlockIcon } from '../icons';
 import './ChatInput.scss';
 
@@ -24,13 +25,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [showFileModal, setShowFileModal] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [userHasConfirmedFiles, setUserHasConfirmedFiles] = useState<Set<string>>(new Set());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { state: chatState, removeSelectedFile } = useChat();
   const { state: fileState } = useFile();
   const validation = useConfidentialityValidation(selectedModel);
 
-  const canSend = message.trim() && !isLoading && validation.isModelCompatible;
+  // Normal send logic - simplified since confirmation happens earlier
+  const canSend = message.trim() && !isLoading;
 
   // Get selected files info for display
   const selectedFiles = fileState.files.filter(file => 
@@ -47,11 +51,48 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Simple send logic - no confirmation needed here since it happens earlier
     if (canSend && onSendMessage) {
       onSendMessage(message.trim(), selectedModel, searchMode);
       setMessage('');
     }
   };
+
+  const handleConfirmSend = () => {
+    setShowConfirmationModal(false);
+    // Mark these specific files as confirmed for this model
+    const fileKey = `${selectedModel}-${validation.confidentialFileNames.join(',')}`;
+    setUserHasConfirmedFiles(prev => new Set([...prev, fileKey]));
+  };
+
+  const handleCancelSend = () => {
+    setShowConfirmationModal(false);
+    // Remove all confidential files from selection
+    const confidentialFiles = selectedFiles.filter(file => 
+      file.isConfidential && validation.confidentialFileNames.includes(file.originalName)
+    );
+    
+    confidentialFiles.forEach(file => {
+      removeSelectedFile(file.id);
+    });
+  };
+
+  // Show modal automatically when validation detects the need for confirmation
+  useEffect(() => {
+    if (validation.shouldShowModal && !showConfirmationModal && validation.confidentialFileNames.length > 0) {
+      const fileKey = `${selectedModel}-${validation.confidentialFileNames.join(',')}`;
+      // Only show modal if user hasn't already confirmed this combination
+      if (!userHasConfirmedFiles.has(fileKey)) {
+        setShowConfirmationModal(true);
+      }
+    }
+  }, [validation.shouldShowModal, selectedModel, validation.confidentialFileNames, showConfirmationModal, userHasConfirmedFiles]);
+
+  // Reset confirmed files when model changes or files change
+  useEffect(() => {
+    setUserHasConfirmedFiles(new Set());
+  }, [selectedModel, chatState.selectedFiles]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -96,16 +137,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
-        {/* Confidentiality Warning */}
-        {validation.warningMessage && (
-          <div className="chat-input__warning">
-            <SecurityIcon />
-            <span className="chat-input__warning-text">{validation.warningMessage}</span>
-          </div>
-        )}
+        {/* Confidentiality Warning - removed since we show modal immediately */}
 
-        {/* Block Message */}
-        {validation.blockedReason && (
+        {/* Block Message - only show if not a confirmation case */}
+        {validation.blockedReason && !validation.needsConfirmation && (
           <div className="chat-input__error">
             <BlockIcon />
             <span className="chat-input__error-text">{validation.blockedReason}</span>
@@ -153,6 +188,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
       <FileSelectionModal 
         isOpen={showFileModal}
         onClose={() => setShowFileModal(false)}
+      />
+
+      {/* Confidential File Warning Modal */}
+      <ConfidentialFileWarningModal
+        isOpen={showConfirmationModal}
+        confidentialFiles={validation.confidentialFileNames}
+        modelName={selectedModel}
+        onConfirm={handleConfirmSend}
+        onCancel={handleCancelSend}
       />
     </div>
   );
