@@ -1,29 +1,46 @@
+import asyncio
+import json
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import List, Optional, Dict, Any, AsyncGenerator
+
+import openai
+import requests
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any, AsyncGenerator
-import sys
-import asyncio
-from pathlib import Path
+from sqlalchemy import func
+from sqlmodel import select, delete
+
 from src.db.database import get_session
 from src.db.models import ChatSession, ChatMessage
-from sqlmodel import select
-from sqlalchemy import func
-from sqlmodel import delete
-import os
-import openai
-import json
-from datetime import datetime
 from src.config.config_loader import get_default_model, get_allowed_models, get_local_models, get_external_models
+
+# Add the src directory to Python path
 src_path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(src_path))
 
 from vectorstore.qdrant_search import search_documents
 from vectorstore.qdrant_indexer import index_chunks
 from file_ingestion.preprocessor import preprocess_document_to_chunks
-import requests
-import json
 from chat_logic.message_handler import handle_chat_message
+
+try:
+    from security import validate_model_document_compatibility
+except ImportError:
+    validate_model_document_compatibility = None
+
+try:
+    from chat_logic.message_handler import handle_chat_message_stream
+except ImportError:
+    handle_chat_message_stream = None
+
+try:
+    from config import get_allowed_models, get_openai_models, get_default_model, get_local_models, get_external_models
+except ImportError:
+    pass
 
 router = APIRouter()
 
@@ -149,10 +166,12 @@ async def chat_message_with_metadata(session_id: int, request: ChatRequest):
                     model = DEFAULT_MODEL
         
         try:
-            from security import validate_model_document_compatibility
-            is_valid, error_message = validate_model_document_compatibility(model, request.selected_document_ids)
-            if not is_valid:
-                raise HTTPException(status_code=403, detail=error_message)
+            if validate_model_document_compatibility is None:
+                pass  # Skip validation if module not available
+            else:
+                is_valid, error_message = validate_model_document_compatibility(model, request.selected_document_ids)
+                if not is_valid:
+                    raise HTTPException(status_code=403, detail=error_message)
         except ImportError:
             pass
             
@@ -178,7 +197,8 @@ async def stream_chat_message(session_id: int, request: ChatRequest):
     """
     async def generate_stream() -> AsyncGenerator[str, None]:
         try:
-            from chat_logic.message_handler import handle_chat_message_stream
+            if handle_chat_message_stream is None:
+                raise ImportError("Message handler stream not available")
             
             model = request.model
             if not model or model == "string":
@@ -190,15 +210,17 @@ async def stream_chat_message(session_id: int, request: ChatRequest):
                         model = DEFAULT_MODEL
             
             try:
-                from security import validate_model_document_compatibility
-                is_valid, error_message = validate_model_document_compatibility(model, request.selected_document_ids)
-                if not is_valid:
-                    error_data = {
-                        "type": "error",
-                        "error": error_message
-                    }
-                    yield f"data: {json.dumps(error_data)}\n\n"
-                    return
+                if validate_model_document_compatibility is None:
+                    pass  # Skip validation if module not available
+                else:
+                    is_valid, error_message = validate_model_document_compatibility(model, request.selected_document_ids)
+                    if not is_valid:
+                        error_data = {
+                            "type": "error",
+                            "error": error_message
+                        }
+                        yield f"data: {json.dumps(error_data)}\n\n"
+                        return
             except ImportError:
                 pass
             
@@ -478,9 +500,9 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int):
             
             if message_data.get("type") == "chat_message":
                 try:
-                    from chat_logic.message_handler import handle_chat_message_stream
+                    if handle_chat_message_stream is None:
+                        raise ImportError("Message handler stream not available")
                     
-                    # Send acknowledgment
                     await websocket.send_text(json.dumps({
                         "type": "ack", 
                         "message": "Message received"
@@ -522,8 +544,6 @@ async def get_available_models():
     Returns all models defined in the config file with default model marked.
     """
     try:
-        from config import get_allowed_models, get_openai_models, get_default_model, get_local_models, get_external_models
-        
         allowed_models = get_allowed_models()
         openai_models = get_openai_models()
         local_models = get_local_models()

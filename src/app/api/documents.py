@@ -1,18 +1,22 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-from src.db.database import get_session
-from src.db.models import Document, FileProcessingTask, ProcessingStatus
-from sqlmodel import select
+import asyncio
+import os
+import traceback
+from datetime import datetime
 from pathlib import Path
-from src.vectorstore.qdrant_indexer import index_chunks
-from src.file_ingestion.preprocessor import preprocess_document_to_chunks
-from sqlalchemy import func
+from typing import List, Optional, Dict, Any
+
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance
-from datetime import datetime
-import os
-import asyncio
+from sqlalchemy import func
+from sqlmodel import select
+
+from src.db.database import get_session
+from src.db.models import Document, FileProcessingTask, ProcessingStatus
+from src.vectorstore.qdrant_indexer import index_chunks
+from src.file_ingestion.preprocessor import preprocess_document_to_chunks
 
 router = APIRouter()
 
@@ -392,10 +396,6 @@ async def preview_document(document_id: int):
             if not file_path.exists():
                 raise HTTPException(status_code=404, detail="Document file not found on disk")
             
-            # Import here to avoid circular imports
-            from fastapi.responses import FileResponse
-            
-            # Determine MIME type based on file extension
             mime_types = {
                 '.pdf': 'application/pdf',
                 '.txt': 'text/plain',
@@ -581,7 +581,6 @@ def preprocess_documents(request: PreprocessRequest):
                 results.append({"filename": filename, "chunks_added": len(processed_chunks), "metadata": metadata})
         return PreprocessResponse(preprocessed=results)
     except Exception as e:
-        import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 

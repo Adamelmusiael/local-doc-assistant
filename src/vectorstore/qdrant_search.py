@@ -1,33 +1,34 @@
+import hashlib
+import numpy as np
+import os
+import uuid
+from typing import List, Dict, Optional
+
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-from typing import List, Dict, Optional
-import uuid
-import os
 
 # Mock embedder function for testing when real embedder is not available
 def mock_embed_text(text: str) -> List[float]:
     """Mock embedding function that returns a simple vector"""
-    import hashlib
-    import numpy as np
-    
-    # Create a deterministic "embedding" based on text hash
     hash_obj = hashlib.md5(text.encode())
     seed = int(hash_obj.hexdigest()[:8], 16)
     np.random.seed(seed)
     return np.random.rand(1024).tolist()
 
-# Try to import real embedder, fallback to mock
 try:
     from .embedder import embed_text
-    
 except ImportError:
     try:
         from embedder import embed_text
-        
     except ImportError:
         embed_text = mock_embed_text
 
-# Initialize Qdrant client
+try:
+    from security import validate_document_access
+except ImportError:
+    validate_document_access = None
+
+
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 
 def get_client():
@@ -79,14 +80,13 @@ def search_documents(query: str, collection_name="documents", limit: int = 5, mo
             }
             results.append(result)
         
-        # Apply confidentiality filtering if model_name is provided
         if model_name:
             try:
-                from security import validate_document_access
-                results = validate_document_access(results, model_name)
+                if validate_document_access is None:
+                    pass  # Skip filtering if module not available
+                else:
+                    results = validate_document_access(results, model_name)
             except ImportError:
-                # If security module is not available, continue without filtering
-                # This ensures backward compatibility during development
                 pass
         
         return results
@@ -187,10 +187,11 @@ def search_with_filters(
         # Apply confidentiality filtering if model_name is provided
         if model_name:
             try:
-                from security import validate_document_access
-                results = validate_document_access(results, model_name)
+                if validate_document_access is None:
+                    pass  # Skip filtering if module not available
+                else:
+                    results = validate_document_access(results, model_name)
             except ImportError:
-                # If security module is not available, continue without filtering
                 pass
         
         return results
@@ -262,10 +263,11 @@ def search_documents_by_ids(
         # Apply confidentiality filtering if model_name is provided
         if model_name:
             try:
-                from security import validate_document_access
-                results = validate_document_access(results, model_name)
+                if validate_document_access is None:
+                    pass  # Skip filtering if module not available
+                else:
+                    results = validate_document_access(results, model_name)
             except ImportError:
-                # If security module is not available, continue without filtering
                 pass
         
         return results

@@ -2,7 +2,17 @@
 Security module for handling confidentiality validation and access control.
 """
 from typing import List, Dict, Optional
+
 from config import is_local_model
+
+try:
+    from db.database import get_session
+    from db.models import Document
+    from sqlmodel import select
+except ImportError:
+    get_session = None
+    Document = None
+    select = None
 
 
 def validate_document_access(documents: List[Dict], model_name: str) -> List[Dict]:
@@ -46,9 +56,8 @@ def has_confidential_documents(document_ids: List[int]) -> bool:
         return False
     
     try:
-        from db.database import get_session
-        from db.models import Document
-        from sqlmodel import select
+        if get_session is None or Document is None or select is None:
+            raise ImportError("Database modules not available")
         
         with get_session() as session:
             statement = select(Document).where(Document.id.in_(document_ids))

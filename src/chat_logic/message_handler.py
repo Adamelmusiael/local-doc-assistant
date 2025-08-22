@@ -1,24 +1,40 @@
+import asyncio
+import json
+import os
+from typing import AsyncGenerator, Dict, Any, Optional, List
+
+import requests
+from openai import AsyncOpenAI, OpenAI
+
 from .prompt_builder import build_prompt
 from .message_store import get_chat_history as _get_chat_history, store_chat_message as _store_chat_message
-import requests
-import json
-import asyncio
-from typing import AsyncGenerator, Dict, Any, Optional, List
 from vectorstore.qdrant_search import search_documents, search_documents_by_ids
 from db.models import Document
-import os
-from openai import AsyncOpenAI
+
+try:
+    from config import get_openai_models as _get_openai_models, get_allowed_models as _get_allowed_models, get_ollama_model_name
+except ImportError:
+    _get_openai_models = None
+    _get_allowed_models = None
+    get_ollama_model_name = None
+
+try:
+    from security import validate_model_document_compatibility
+except ImportError:
+    validate_model_document_compatibility = None
 
 LLM_API_URL = os.getenv("LLM_API_URL", "http://localhost:11434/api/generate")
 
 def get_openai_models():
     """Get OpenAI models from config (lazy loading)"""
-    from config import get_openai_models as _get_openai_models
+    if _get_openai_models is None:
+        raise ImportError("Config module not available")
     return _get_openai_models()
 
 def get_allowed_models():
     """Get allowed models from config (lazy loading)"""
-    from config import get_allowed_models as _get_allowed_models
+    if _get_allowed_models is None:
+        raise ImportError("Config module not available")
     return _get_allowed_models()
 
 
@@ -27,7 +43,6 @@ def get_chat_history(session_id):
 
 def generate_response(prompt, model="mistral"):
     if model in get_openai_models():
-        from openai import OpenAI
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         response = client.chat.completions.create(
             model=model,
@@ -39,7 +54,8 @@ def generate_response(prompt, model="mistral"):
         return response.choices[0].message.content
     
     try:
-        from config import get_ollama_model_name
+        if get_ollama_model_name is None:
+            raise ImportError("Config module not available")
         ollama_model = get_ollama_model_name(model)
         
         response = requests.post(
@@ -79,7 +95,8 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
             yield f"[OpenAI Error: {str(e)}]"
     else:
         try:
-            from config import get_ollama_model_name
+            if get_ollama_model_name is None:
+                raise ImportError("Config module not available")
             ollama_model = get_ollama_model_name(model)
             
             response = requests.post(
@@ -148,10 +165,12 @@ def handle_chat_message(
         raise ValueError(f"Model '{model}' is not supported. Please choose one of: {allowed_models}")
     
     try:
-        from security import validate_model_document_compatibility
-        is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
-        if not is_valid:
-            raise ValueError(error_message)
+        if validate_model_document_compatibility is None:
+            pass  # Skip validation if module not available
+        else:
+            is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
+            if not is_valid:
+                raise ValueError(error_message)
     except ImportError:
         pass
     
@@ -222,14 +241,16 @@ async def handle_chat_message_stream(
             return
         
         try:
-            from security import validate_model_document_compatibility
-            is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
-            if not is_valid:
-                yield {
-                    "type": "error",
-                    "content": error_message
-                }
-                return
+            if validate_model_document_compatibility is None:
+                pass  # Skip validation if module not available
+            else:
+                is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
+                if not is_valid:
+                    yield {
+                        "type": "error",
+                        "content": error_message
+                    }
+                    return
         except ImportError:
             pass
         
