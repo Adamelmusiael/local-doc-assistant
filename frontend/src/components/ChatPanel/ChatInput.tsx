@@ -33,15 +33,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const { state: fileState } = useFile();
   const validation = useConfidentialityValidation(selectedModel);
 
-  // Normal send logic - simplified since confirmation happens earlier
   const canSend = message.trim() && !isLoading;
 
-  // Get selected files info for display
   const selectedFiles = fileState.files.filter(file => 
     chatState.selectedFiles.includes(file.id)
   );
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -52,7 +49,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simple send logic - no confirmation needed here since it happens earlier
     if (canSend && onSendMessage) {
       onSendMessage(message.trim(), selectedModel, searchMode);
       setMessage('');
@@ -61,14 +57,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleConfirmSend = () => {
     setShowConfirmationModal(false);
-    // Mark these specific files as confirmed for this model
     const fileKey = `${selectedModel}-${validation.confidentialFileNames.join(',')}`;
     setUserHasConfirmedFiles(prev => new Set([...prev, fileKey]));
   };
 
   const handleCancelSend = () => {
     setShowConfirmationModal(false);
-    // Remove all confidential files from selection
     const confidentialFiles = selectedFiles.filter(file => 
       file.isConfidential && validation.confidentialFileNames.includes(file.originalName)
     );
@@ -89,7 +83,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [validation.shouldShowModal, selectedModel, validation.confidentialFileNames, showConfirmationModal, userHasConfirmedFiles]);
 
-  // Reset confirmed files when model changes or files change
   useEffect(() => {
     setUserHasConfirmedFiles(new Set());
   }, [selectedModel, chatState.selectedFiles]);
@@ -116,7 +109,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div className="chat-input">
       <form onSubmit={handleSubmit} className="chat-input__form">
-        {/* Selected Files Display */}
         {selectedFiles.length > 0 && (
           <div className="chat-input__attachments">
             {selectedFiles.map((file) => (
@@ -137,9 +129,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
-        {/* Confidentiality Warning - removed since we show modal immediately */}
-
-        {/* Block Message - only show if not a confirmation case */}
         {validation.blockedReason && !validation.needsConfirmation && (
           <div className="chat-input__error">
             <BlockIcon />
@@ -147,7 +136,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
-        {/* Input Container */}
         <div className="chat-input__container">
           <button 
             type="button" 
@@ -184,13 +172,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       </form>
 
-      {/* File Selection Modal */}
       <FileSelectionModal 
         isOpen={showFileModal}
         onClose={() => setShowFileModal(false)}
       />
 
-      {/* Confidential File Warning Modal */}
       <ConfidentialFileWarningModal
         isOpen={showConfirmationModal}
         confidentialFiles={validation.confidentialFileNames}

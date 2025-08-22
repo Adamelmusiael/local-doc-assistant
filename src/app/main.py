@@ -8,13 +8,11 @@ from qdrant_client import QdrantClient
 
 app = FastAPI(title="AI Assistant")
 
-# CORS Configuration
-# Get allowed origins from environment variable, default to common development origins
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,  # Frontend origins
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=[
@@ -26,7 +24,7 @@ app.add_middleware(
         "X-Requested-With",
         "X-CSRF-Token",
         "Cache-Control",
-        "X-Accel-Buffering"  # For SSE streaming
+        "X-Accel-Buffering"
     ],
     expose_headers=["Content-Range", "X-Content-Range", "Cache-Control"],
     max_age=600,  # Cache preflight requests for 10 minutes

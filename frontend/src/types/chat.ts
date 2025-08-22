@@ -1,6 +1,5 @@
 import { Chat, ChatMessage, SearchMode } from './index';
 
-// State interface for chat context
 export interface ChatState {
   chats: Chat[];
   currentChat: Chat | null;
@@ -10,7 +9,6 @@ export interface ChatState {
   selectedFiles: string[];
 }
 
-// Action types for chat context
 export type ChatAction =
   | { type: 'SET_CHATS'; payload: Chat[] }
   | { type: 'ADD_CHAT'; payload: Chat }
@@ -29,11 +27,9 @@ export type ChatAction =
   | { type: 'LOAD_CHATS_SUCCESS'; payload: Chat[] }
   | { type: 'LOAD_CHATS_ERROR'; payload: string };
 
-// Context interface for chat context
 export interface ChatContextType {
   state: ChatState;
   dispatch: React.Dispatch<ChatAction>;
-  // Convenience methods
   loadChats: () => Promise<void>;
   createChat: (title: string, model?: string) => Promise<void>;
   selectChat: (chatId: string) => void;

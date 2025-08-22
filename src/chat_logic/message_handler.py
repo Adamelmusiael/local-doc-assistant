@@ -27,8 +27,6 @@ def get_chat_history(session_id):
 
 def generate_response(prompt, model="mistral"):
     if model in get_openai_models():
-        # Note: This function should be deprecated in favor of the streaming version
-        # For now, using a synchronous client for backward compatibility
         from openai import OpenAI
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         response = client.chat.completions.create(
@@ -39,9 +37,8 @@ def generate_response(prompt, model="mistral"):
         )
         print("model openai", model)
         return response.choices[0].message.content
-    # Local model (e.g. Mistral)
+    
     try:
-        # Get the actual Ollama model name
         from config import get_ollama_model_name
         ollama_model = get_ollama_model_name(model)
         
@@ -64,7 +61,6 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
     Yields chunks of text as they are generated.
     """
     if model in get_openai_models():
-        # OpenAI streaming with proper async client
         try:
             client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             stream = await client.chat.completions.create(
@@ -72,10 +68,9 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.2,
                 max_tokens=1024,
-                stream=True  # Enable streaming
+                stream=True
             )
             
-            # Properly iterate through the async stream
             async for chunk in stream:
                 if chunk.choices[0].delta.content is not None:
                     yield chunk.choices[0].delta.content
@@ -83,9 +78,7 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
         except Exception as e:
             yield f"[OpenAI Error: {str(e)}]"
     else:
-        # Local model (Ollama) streaming
         try:
-            # Get the actual Ollama model name
             from config import get_ollama_model_name
             ollama_model = get_ollama_model_name(model)
             
@@ -99,7 +92,6 @@ async def generate_response_stream(prompt: str, model: str = "mistral") -> Async
                 yield f"[Model error: {response.status_code}]"
                 return
             
-            # Process streaming response from Ollama
             for line in response.iter_lines():
                 if line:
                     try:
@@ -121,7 +113,6 @@ def extract_sources(chunks):
     sources = []
     for chunk in chunks:
         if isinstance(chunk, dict):
-            # Create source object in expected format
             source = {
                 "text": chunk.get("text", ""),
                 "score": chunk.get("score", 0.0),
@@ -132,11 +123,9 @@ def extract_sources(chunks):
     return sources
 
 def score_confidence(answer, chunks):
-    # TODO: calculate confidence score
     return None
 
 def score_hallucination(answer, chunks):
-    # TODO: calculate hallucination score
     return None
 
 def store_chat_message(session_id, role, content, sources=None, confidence=None, hallucination=None):
@@ -154,27 +143,21 @@ def handle_chat_message(
     selected_document_ids=None,
     search_mode="all"
 ):
-    # Model validation
     allowed_models = get_allowed_models()
     if model.lower() not in [m.lower() for m in allowed_models]:
         raise ValueError(f"Model '{model}' is not supported. Please choose one of: {allowed_models}")
     
-    # Confidentiality validation
     try:
         from security import validate_model_document_compatibility
         is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
         if not is_valid:
             raise ValueError(error_message)
     except ImportError:
-        # If security module is not available, continue without validation
         pass
     
-    # 1. Get history
     chat_history = get_chat_history(session_id)
     
-    # 2. Get chunks based on search mode
     if search_mode == "selected_only" and selected_document_ids:
-        # Get semantically relevant chunks from selected documents only
         top_chunks = search_documents_by_ids(
             user_question,
             selected_document_ids,
@@ -191,29 +174,19 @@ def handle_chat_message(
             model_name=model
         )
         
-        # Get additional chunks from all documents
         additional_chunks = search_documents(user_question, limit=2, model_name=model)
         
-        # Combine results (selected chunks first, then additional)
         top_chunks = selected_chunks + additional_chunks
         
     else:
-        # Standard semantic search across all documents
         top_chunks = search_documents(user_question, limit=5, model_name=model)
     
-    # 3. Build prompt
     prompt = build_prompt(top_chunks, chat_history, user_question)
-    # 4. Store user question
     store_chat_message(session_id, role="user", content=user_question)
-    # 5. Generate response
     answer = generate_response(prompt, model=model)
-    # 6. Extract sources
     sources = extract_sources(top_chunks)
-    # 7. Score confidence
     confidence = None
-    # 8. Score hallucination    
     hallucination = None
-    # 9. Store chat message
     store_chat_message(session_id, role="assistant", content=answer, sources=sources, confidence=confidence, hallucination=hallucination)
     
     return {
@@ -240,7 +213,6 @@ async def handle_chat_message_stream(
     Yields chunks of the response as they are generated.
     """
     try:
-        # Model validation
         allowed_models = get_allowed_models()
         if model.lower() not in [m.lower() for m in allowed_models]:
             yield {
@@ -249,7 +221,6 @@ async def handle_chat_message_stream(
             }
             return
         
-        # Confidentiality validation
         try:
             from security import validate_model_document_compatibility
             is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
@@ -260,17 +231,12 @@ async def handle_chat_message_stream(
                 }
                 return
         except ImportError:
-            # If security module is not available, continue without validation
-            # This ensures backward compatibility during development
             pass
         
-        # Send status update
         yield {"type": "status", "content": "Searching documents..."}
         
-        # 1. Get history
         chat_history = get_chat_history(session_id)
         
-        # 2. Get chunks based on search mode
         if search_mode == "selected_only" and selected_document_ids:
             top_chunks = search_documents_by_ids(
                 user_question,
@@ -290,21 +256,17 @@ async def handle_chat_message_stream(
         else:
             top_chunks = search_documents(user_question, limit=5, model_name=model)
         
-        # Send sources info
         yield {
             "type": "sources",
             "sources": extract_sources(top_chunks),
             "chunks_used": len(top_chunks)
         }
         
-        # 3. Build prompt
         yield {"type": "status", "content": "Generating response..."}
         prompt = build_prompt(top_chunks, chat_history, user_question)
         
-        # 4. Store user question
         store_chat_message(session_id, role="user", content=user_question)
         
-        # 5. Stream response generation
         full_response = ""
         async for chunk in generate_response_stream(prompt, model=model):
             full_response += chunk
@@ -313,7 +275,6 @@ async def handle_chat_message_stream(
                 "content": chunk
             }
         
-        # 6. Store complete response and metadata
         sources = extract_sources(top_chunks)
         confidence = score_confidence(full_response, top_chunks)
         hallucination = score_hallucination(full_response, top_chunks)
@@ -327,7 +288,6 @@ async def handle_chat_message_stream(
             hallucination=hallucination
         )
         
-        # 7. Send final metadata
         yield {
             "type": "metadata",
             "content": {

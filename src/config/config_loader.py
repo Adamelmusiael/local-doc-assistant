@@ -8,18 +8,15 @@ from typing import List, Set
 def load_config() -> dict:
     """Load configuration from .config file"""
     config = {}
-    # Find project root by looking for .config file
     current_dir = os.path.dirname(__file__)
     project_root = current_dir
     
-    # Go up directories until we find .config or reach filesystem root
     while project_root != os.path.dirname(project_root):
         config_path = os.path.join(project_root, '.config')
         if os.path.exists(config_path):
             break
         project_root = os.path.dirname(project_root)
     else:
-        # If we didn't find .config, try the original approach
         config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.config')
     
     if not os.path.exists(config_path):
@@ -110,18 +107,14 @@ def is_local_model(model_name: str) -> bool:
     if not model_name:
         return False
     
-    # Check if model is in the local models list
     local_models = get_local_models()
     if model_name.lower() in {m.lower() for m in local_models}:
         return True
     
-    # Check if model is in the external models list
     external_models = get_external_models()
     if model_name.lower() in {m.lower() for m in external_models}:
         return False
     
-    # If model is not in either list, default to local for safety
-    # (assuming unknown models are local/internal)
     return True
 
 

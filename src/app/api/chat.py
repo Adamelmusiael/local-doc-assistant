@@ -15,7 +15,6 @@ import openai
 import json
 from datetime import datetime
 from src.config.config_loader import get_default_model, get_allowed_models, get_local_models, get_external_models
-# Add the src directory to Python path
 src_path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(src_path))
 
@@ -30,10 +29,9 @@ router = APIRouter()
 
 LLM_API_URL = os.getenv("LLM_API_URL", "http://localhost:11434/api/generate")
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", Path(__file__).parent.parent.parent.parent / "upload_files"))
-DEFAULT_MODEL = get_default_model()  # This reads from .config file properly
+DEFAULT_MODEL = get_default_model()
 ALLOWED_MODELS = get_allowed_models()
 
-# Request Models
 class CreateChatSessionRequest(BaseModel):
     """Request model for creating a new chat session"""
     title: str = Field(..., description="Title of the chat session")
@@ -56,7 +54,6 @@ class UpdateChatSessionRequest(BaseModel):
     status: Optional[str] = Field(None, description="New status for the session (e.g., 'active', 'archived', 'finished')")
     session_metadata: Optional[str] = Field(None, description="New metadata for the session")
 
-# Response Models
 class ChatSessionResponse(BaseModel):
     """Response model for chat session data"""
     id: int
@@ -151,14 +148,12 @@ async def chat_message_with_metadata(session_id: int, request: ChatRequest):
                 else:
                     model = DEFAULT_MODEL
         
-        # Confidentiality validation 
         try:
             from security import validate_model_document_compatibility
             is_valid, error_message = validate_model_document_compatibility(model, request.selected_document_ids)
             if not is_valid:
                 raise HTTPException(status_code=403, detail=error_message)
         except ImportError:
-            # If security module is not available, continue without validation
             pass
             
         result = handle_chat_message(
@@ -183,10 +178,8 @@ async def stream_chat_message(session_id: int, request: ChatRequest):
     """
     async def generate_stream() -> AsyncGenerator[str, None]:
         try:
-            # Import streaming handler
             from chat_logic.message_handler import handle_chat_message_stream
             
-            # Get model
             model = request.model
             if not model or model == "string":
                 with get_session() as session:
@@ -207,13 +200,10 @@ async def stream_chat_message(session_id: int, request: ChatRequest):
                     yield f"data: {json.dumps(error_data)}\n\n"
                     return
             except ImportError:
-                # If security module is not available, continue without validation
                 pass
             
-            # Send initial metadata
             yield f"data: {json.dumps({'type': 'start', 'session_id': session_id, 'model': model})}\n\n"
             
-            # Stream the response
             full_response = ""
             async for chunk_data in handle_chat_message_stream(
                 session_id,
@@ -225,14 +215,11 @@ async def stream_chat_message(session_id: int, request: ChatRequest):
                 if chunk_data["type"] == "chunk":
                     full_response += chunk_data["content"]
                 
-                # Send chunk as SSE
                 yield f"data: {json.dumps(chunk_data)}\n\n"
             
-            # Send completion signal
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
             
         except Exception as e:
-            # Send error message
             error_data = {
                 "type": "error",
                 "error": str(e)
@@ -245,7 +232,7 @@ async def stream_chat_message(session_id: int, request: ChatRequest):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"  # Disable buffering
+            "X-Accel-Buffering": "no"
         }
     )
 
@@ -260,8 +247,6 @@ async def list_chat_sessions():
     """
     try:
         with get_session() as session:
-            # Query to get sessions with their latest message timestamp
-            # Using subquery to get the latest message timestamp for each session
             latest_message_subquery = (
                 select(
                     ChatMessage.session_id,
@@ -271,7 +256,6 @@ async def list_chat_sessions():
                 .subquery()
             )
             
-            # Join ChatSession with the subquery and order by latest message time
             statement = (
                 select(ChatSession)
                 .outerjoin(

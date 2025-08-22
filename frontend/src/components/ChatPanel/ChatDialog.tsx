@@ -15,13 +15,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) =>
   const { state: chatState, sendMessage } = useChat();
   const { state: fileState } = useFile();
   
-  // Ref for the messages container to control scrolling
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Get current chat messages
   const messages = chatState.currentChat?.messages || [];
 
-  // Check if any message is currently being generated
   const isLoading = messages.some(msg => 
     msg.status === 'pending' || 
     msg.status === 'sending' || 
@@ -29,20 +26,17 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) =>
     msg.isGenerating
   );
 
-  // Auto-scroll to bottom when new messages are added or when streaming
   useEffect(() => {
     if (messagesContainerRef.current) {
       const container = messagesContainerRef.current;
-      // Smooth scroll to bottom
       container.scrollTo({
         top: container.scrollHeight,
         behavior: 'smooth'
       });
     }
-  }, [messages.length, messages[messages.length - 1]?.content]); // Trigger on new messages or content changes
+  }, [messages.length, messages[messages.length - 1]?.content]);
 
   const handleSendMessage = async (message: string, _model: string, _searchMode: SearchMode, _attachments?: File[]) => {
-    // Get selected files from FileContext
     const selectedFiles = fileState.files.filter(file => 
       chatState.selectedFiles.includes(file.id)
     );
@@ -56,7 +50,6 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ selectedModel, searchMode }) =>
       fileId: file.id
     }));
 
-    // Use the chat context to send the message with streaming
     await sendMessage(message, attachments.length > 0 ? attachments : undefined);
   };
 

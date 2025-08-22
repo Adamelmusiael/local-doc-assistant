@@ -1,7 +1,6 @@
 import { ChatState, ChatAction } from '../types/chat';
 import { createTimestamp } from '../utils/dateUtils';
 
-// Reducer function for chat context state management
 export const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
   switch (action.type) {
     case 'LOAD_CHATS_START':
