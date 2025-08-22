@@ -1,3 +1,4 @@
+###### I created this project during my internship at NoA Ignite
 # AI Assistant
 
 
