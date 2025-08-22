@@ -27,7 +27,7 @@
 
 4. **Access the app:**
    - Backend API: [http://localhost:8000](http://localhost:8000)
-
+   - Frontend API: [http://localhost:3000](http://localhost:3000)
 ---
 
 ##  For Developers (Local Setup, Optional)
