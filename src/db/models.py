@@ -4,7 +4,6 @@ from datetime import datetime
 from enum import Enum
 
 
-# Enums for status tracking
 class ProcessingStatus(str, Enum):
     PENDING = "pending"
     UPLOADING = "uploading"
@@ -15,7 +14,6 @@ class ProcessingStatus(str, Enum):
     FAILED = "failed"
 
 
-# main table prototype
 class Document(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -68,7 +66,6 @@ class FileProcessingTask(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     completed_at: Optional[datetime] = None
     
-    # Step-specific progress tracking
     upload_progress: float = Field(default=0.0)
     extraction_progress: float = Field(default=0.0)
     chunking_progress: float = Field(default=0.0)

@@ -7,7 +7,6 @@ from typing import List, Dict, Optional
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
-# Mock embedder function for testing when real embedder is not available
 def mock_embed_text(text: str) -> List[float]:
     """Mock embedding function that returns a simple vector"""
     hash_obj = hashlib.md5(text.encode())
@@ -49,20 +48,16 @@ def search_documents(query: str, collection_name="documents", limit: int = 5, mo
         List[Dict]: List of search results with scores and metadata (filtered by confidentiality)
     """
     try:
-        # Convert query text to vector
         query_vector = embed_text(query)
         
-        # Get client instance
         client = get_client()
         
-        # Search in Qdrant
         search_result = client.search(
             collection_name=collection_name,
             query_vector=query_vector,
             limit=limit
         )
         
-        # Format results
         results = []
         for hit in search_result:
             result = {
@@ -119,10 +114,8 @@ def search_with_filters(
         query_vector = embed_text(query)
         client = get_client()
         
-        # Build filter conditions
         conditions = []
         
-        # Add metadata filters (existing functionality)
         if filters:
             for key, value in filters.items():
                 conditions.append(
@@ -132,7 +125,6 @@ def search_with_filters(
                     )
                 )
         
-        # Add document ID filter (new functionality)
         if document_ids:
             doc_conditions = []
             for doc_id in document_ids:
@@ -142,15 +134,11 @@ def search_with_filters(
                         match=MatchValue(value=doc_id)
                     )
                 )
-            # If we have both metadata filters AND document IDs
             if conditions:
-                # Metadata filters must match AND document must be in selected list
                 conditions.append(Filter(should=doc_conditions))
             else:
-                # Only document ID filtering
                 conditions = [Filter(should=doc_conditions)]
         
-        # Create final filter
         query_filter = None
         if conditions:
             if len(conditions) == 1:
@@ -158,7 +146,6 @@ def search_with_filters(
             else:
                 query_filter = Filter(must=conditions)
         
-        # Search in Qdrant
         search_result = client.search(
             collection_name="documents",
             query_vector=query_vector,
@@ -166,7 +153,6 @@ def search_with_filters(
             limit=limit
         )
         
-        # Format results (same as before)
         results = []
         for hit in search_result:
             result = {
@@ -184,7 +170,6 @@ def search_with_filters(
             }
             results.append(result)
         
-        # Apply confidentiality filtering if model_name is provided
         if model_name:
             try:
                 if validate_document_access is None:
@@ -222,7 +207,6 @@ def search_documents_by_ids(
         query_vector = embed_text(query)
         client = get_client()
         
-        # Create filter for document IDs
         doc_conditions = []
         for doc_id in document_ids:
             doc_conditions.append(
@@ -234,7 +218,6 @@ def search_documents_by_ids(
         
         query_filter = Filter(should=doc_conditions)
         
-        # Search in Qdrant with document filter
         search_result = client.search(
             collection_name="documents",
             query_vector=query_vector,
@@ -242,7 +225,6 @@ def search_documents_by_ids(
             limit=limit
         )
         
-        # Format results
         results = []
         for hit in search_result:
             result = {
@@ -260,7 +242,6 @@ def search_documents_by_ids(
             }
             results.append(result)
         
-        # Apply confidentiality filtering if model_name is provided
         if model_name:
             try:
                 if validate_document_access is None:

@@ -18,7 +18,6 @@ from src.db.database import get_session
 from src.db.models import ChatSession, ChatMessage
 from src.config.config_loader import get_default_model, get_allowed_models, get_local_models, get_external_models
 
-# Add the src directory to Python path
 src_path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(src_path))
 
@@ -130,7 +129,6 @@ class DeleteResponse(BaseModel):
     session_id: int
 
 
-# Enhanced response models for better error handling
 class ErrorDetail(BaseModel):
     """Detailed error information"""
     error_code: str
@@ -346,7 +344,6 @@ async def delete_chat_session(session_id: int):
             chat_session = session.get(ChatSession, session_id)
             if not chat_session:
                 raise HTTPException(status_code=404, detail="Chat session not found")
-            # Delete all messages for this session
             session.exec(delete(ChatMessage).where(ChatMessage.session_id == session_id))
             session.delete(chat_session)
             session.commit()
@@ -370,12 +367,10 @@ async def update_chat_session(session_id: int, request: UpdateChatSessionRequest
             if not chat_session:
                 raise HTTPException(status_code=404, detail="Chat session not found")
             
-            # Update only the fields that were provided in the request
             update_data = {}
             if request.title is not None:
                 update_data["title"] = request.title
             if request.llm_model is not None:
-                # Validate model if provided
                 llm_model = request.llm_model.strip() if request.llm_model else ""
                 if llm_model == 'string' or not llm_model:
                     llm_model = DEFAULT_MODEL
@@ -389,7 +384,6 @@ async def update_chat_session(session_id: int, request: UpdateChatSessionRequest
             if request.session_metadata is not None:
                 update_data["session_metadata"] = request.session_metadata
             
-            # Apply updates
             for field, value in update_data.items():
                 setattr(chat_session, field, value)
             
@@ -482,7 +476,6 @@ async def get_chat_messages(session_id: int):
         raise HTTPException(status_code=500, detail=f"Error retrieving messages: {str(e)}")
 
 
-# Simple WebSocket endpoint for single-user chat
 @router.websocket("/{session_id}/ws")
 async def websocket_endpoint(websocket: WebSocket, session_id: int):
     """
@@ -494,7 +487,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int):
     
     try:
         while True:
-            # Wait for message from client
             data = await websocket.receive_text()
             message_data = json.loads(data)
             
@@ -508,7 +500,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int):
                         "message": "Message received"
                     }))
                     
-                    # Stream the response
                     async for chunk in handle_chat_message_stream(
                         session_id,
                         message_data.get("question", ""),
@@ -526,7 +517,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int):
                     await websocket.send_text(json.dumps(error_message))
             
             elif message_data.get("type") == "ping":
-                # Simple ping/pong for connection health
                 await websocket.send_text(json.dumps({"type": "pong"}))
                     
     except WebSocketDisconnect:
@@ -550,7 +540,6 @@ async def get_available_models():
         external_models = get_external_models()
         default_model = get_default_model()
         
-        # Define detailed model metadata
         model_definitions = {
             "mistral": {
                 "name": "Mistral",
@@ -610,13 +599,11 @@ async def get_available_models():
         
         models = []
         
-        # Process all allowed models
         for model in allowed_models:
             is_openai = model in openai_models
             is_local = model in local_models
             is_default = model == default_model
             
-            # Get model definition or use fallback
             model_def = model_definitions.get(model, {
                 "name": model.replace("-", " ").replace(".", " ").title(),
                 "description": f"{'OpenAI' if is_openai else 'Local'} model",

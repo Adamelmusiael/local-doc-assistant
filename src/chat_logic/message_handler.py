@@ -185,7 +185,6 @@ def handle_chat_message(
         )
         
     elif search_mode == "hybrid" and selected_document_ids:
-        # Get chunks from selected documents first
         selected_chunks = search_documents_by_ids(
             user_question,
             selected_document_ids,

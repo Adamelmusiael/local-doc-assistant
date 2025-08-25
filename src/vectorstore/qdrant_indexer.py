@@ -58,7 +58,7 @@ def ensure_collection(collection_name: str = "documents"):
 def ensure_collection_with_retry(max_retries=10, delay=3):
     for attempt in range(max_retries):
         try:
-            ensure_collection()  # your existing function
+            ensure_collection() 
             print("Qdrant is ready!")
             return
         except ResponseHandlingException as e:

@@ -56,12 +56,10 @@ def get_file_size(file_path: str) -> Optional[int]:
         pass
     return None
 
-# Request Models
 class PreprocessRequest(BaseModel):
     """Request model for preprocessing documents"""
     filenames: List[str] = Field(..., description="List of filenames to preprocess")
 
-# Response Models
 class DocumentMetadata(BaseModel):
     """Response model for document metadata"""
     confidentiality: str
@@ -137,7 +135,6 @@ class DeleteChunksResponse(BaseModel):
     message: str
 
 
-# Progress tracking response models
 class FileProcessingProgress(BaseModel):
     """Response model for file processing progress"""
     task_id: int
@@ -150,7 +147,6 @@ class FileProcessingProgress(BaseModel):
     updated_at: str
     completed_at: Optional[str]
     
-    # Step-specific progress
     upload_progress: float
     extraction_progress: float
     chunking_progress: float
@@ -178,15 +174,12 @@ async def upload_file(
     and stores both the file and metadata in the database.
     """
     
-    # Validate file type
     if not file.filename or not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed [currently]")
     
-    # Validate file size
     if file.size == 0:
         raise HTTPException(status_code=400, detail="File is empty")
     
-    # Generate unique filename
     file_extension = Path(file.filename).suffix
     base_name = Path(file.filename).stem
     candidate_name = f"{base_name}{file_extension}"
@@ -198,12 +191,10 @@ async def upload_file(
     file_path = UPLOAD_DIR / unique_filename
     
     try:
-        # Save file
         contents = await file.read()
         with open(file_path, "wb") as f:
             f.write(contents)
         
-        # Save metadata to database
         with get_session() as session:
             document = Document(
                 filename=file.filename,
@@ -220,7 +211,6 @@ async def upload_file(
             
             document_id = document.id
         
-        # Prepare response
         file_size_bytes = len(contents)
         
         def format_file_size(size_bytes):
@@ -251,7 +241,6 @@ async def upload_file(
         )
         
     except Exception as e:
-        # Cleanup on error
         if file_path.exists():
             file_path.unlink()
         raise HTTPException(status_code=500, detail=f"Error saving file or metadata: {str(e)}")
@@ -272,7 +261,6 @@ async def list_documents():
             
             documents_list = []
             for doc in documents:
-                # Get file size from database or from filesystem
                 file_size = doc.file_size
                 if file_size is None and doc.pointer_to_loc:
                     file_size = get_file_size(doc.pointer_to_loc)
@@ -308,7 +296,6 @@ async def get_stats():
     """
     try:
         with get_session() as session:
-            # Test database connection
             try:
                 session.exec(select(Document).limit(1)).first()
                 db_connection_status = "connected"
@@ -318,7 +305,6 @@ async def get_stats():
                     detail=f"Database connection failed: {str(db_error)}"
                 )
             
-            # Get document counts
             total_count = len(session.exec(select(Document)).all())
             processed_count = len(session.exec(select(Document).where(Document.processed == True)).all())
 
@@ -348,12 +334,10 @@ async def get_document(document_id: int):
             if not document:
                 raise HTTPException(status_code=404, detail="Document not found")
             
-            # Check if file exists
             file_exists = False
             file_size = document.file_size
             if document.pointer_to_loc:
                 file_exists = Path(document.pointer_to_loc).exists()
-                # If file size not in DB, get it from filesystem
                 if file_size is None and file_exists:
                     file_size = get_file_size(document.pointer_to_loc)
             
@@ -406,7 +390,6 @@ async def preview_document(document_id: int):
             file_extension = file_path.suffix.lower()
             content_type = mime_types.get(file_extension, 'application/octet-stream')
             
-            # Return file with headers for browser preview
             return FileResponse(
                 path=str(file_path),
                 media_type=content_type,
@@ -429,14 +412,12 @@ def delete_all_documents_and_chunks():
     Completely clears the document database and vector store.
     """
     try:
-        # Delete all documents from database
         with get_session() as session:
             docs = session.exec(select(Document)).all()
             num_deleted = len(docs)
             session.exec(Document.__table__.delete())
             session.commit()
         
-        # Delete all vectors from Qdrant
         client = QdrantClient(QDRANT_URL)
         client.recreate_collection(
             collection_name="documents",
@@ -462,7 +443,6 @@ async def delete_document(document_id: int):
             if not document:
                 raise HTTPException(status_code=404, detail="Document not found")
             
-            # Delete physical file if exists
             file_deleted = False
             if document.pointer_to_loc:
                 file_path = Path(document.pointer_to_loc)
@@ -470,14 +450,12 @@ async def delete_document(document_id: int):
                     file_path.unlink()
                     file_deleted = True
             
-            # Delete associated processing tasks
             processing_tasks = session.exec(
                 select(FileProcessingTask).where(FileProcessingTask.document_id == document_id)
             ).all()
             for task in processing_tasks:
                 session.delete(task)
             
-            # Delete chunks/vectors from Qdrant
             chunks_deleted = False
             try:
                 client = QdrantClient(QDRANT_URL)
@@ -494,9 +472,7 @@ async def delete_document(document_id: int):
                 print(f"Deleted chunks for document_id={document_id} from Qdrant")
             except Exception as chunk_error:
                 print(f"Warning: Failed to delete chunks for document {document_id}: {chunk_error}")
-                # Continue with document deletion even if chunk deletion fails
             
-            # Delete database record
             session.delete(document)
             session.commit()
             
@@ -522,7 +498,6 @@ def delete_chunks_by_document_id(document_id: int):
     """
     try:
         client = QdrantClient(QDRANT_URL)
-        # Delete all points where payload.document_id == document_id
         client.delete(
             collection_name="documents",
             wait=True,
@@ -551,7 +526,6 @@ def preprocess_documents(request: PreprocessRequest):
             if not file_path.exists():
                 raise HTTPException(status_code=404, detail=f"File {filename} not found")
 
-            # Retrieve metadata from the database
             with get_session() as session:
                 document = session.exec(
                     select(Document).where(func.lower(Document.pointer_to_loc).like(f"%{filename.lower()}"))
@@ -567,13 +541,10 @@ def preprocess_documents(request: PreprocessRequest):
                     "client": document.client
                 }
 
-                # Preprocess the document with actual metadata
                 processed_chunks = preprocess_document_to_chunks(str(file_path), metadata=metadata)
 
-                # Index the chunks
                 index_chunks(processed_chunks)
 
-                # Update document status in database
                 document.processed = True
                 session.add(document)
                 session.commit()
@@ -585,7 +556,6 @@ def preprocess_documents(request: PreprocessRequest):
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
 
-# Background task functions for file processing
 async def update_processing_progress(task_id: int, step: str, progress: float, step_progress: Dict[str, float] = None):
     """Update processing progress in database"""
     with get_session() as session:
@@ -612,35 +582,27 @@ async def update_processing_progress(task_id: int, step: str, progress: float, s
 async def process_file_background(task_id: int, document_id: int, file_path: str, metadata: Dict[str, Any]):
     """Background task to process uploaded file"""
     try:
-        # Update status to extracting
         await update_processing_progress(task_id, "Text Extraction", 25.0, {"extraction": 0.0})
         
-        # Text extraction
         await asyncio.sleep(0.1)  # Simulate processing time
         processed_chunks = preprocess_document_to_chunks(file_path, metadata=metadata)
         await update_processing_progress(task_id, "Text Extraction", 50.0, {"extraction": 100.0})
         
-        # Update status to chunking
         await update_processing_progress(task_id, "Chunking", 60.0, {"chunking": 0.0})
         await asyncio.sleep(0.1)
         await update_processing_progress(task_id, "Chunking", 75.0, {"chunking": 100.0})
         
-        # Update status to vectorizing
         await update_processing_progress(task_id, "Vectorization", 80.0, {"vectorization": 0.0})
         
-        # Index the chunks
         index_chunks(processed_chunks)
         await update_processing_progress(task_id, "Vectorization", 95.0, {"vectorization": 100.0})
         
-        # Complete processing
         with get_session() as session:
-            # Update document status
             document = session.exec(select(Document).where(Document.id == document_id)).first()
             if document:
                 document.processed = True
                 session.add(document)
             
-            # Update task status
             task = session.exec(select(FileProcessingTask).where(FileProcessingTask.id == task_id)).first()
             if task:
                 task.status = ProcessingStatus.COMPLETED
@@ -653,7 +615,6 @@ async def process_file_background(task_id: int, document_id: int, file_path: str
             session.commit()
             
     except Exception as e:
-        # Update task with error status
         with get_session() as session:
             task = session.exec(select(FileProcessingTask).where(FileProcessingTask.id == task_id)).first()
             if task:
@@ -678,16 +639,13 @@ async def upload_file_async(
     Returns immediately with a task ID that can be used to track processing progress.
     """
     
-    # Validate file type
     if not file.filename or not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
     
-    # Validate file size
     if file.size == 0:
         raise HTTPException(status_code=400, detail="File is empty")
     
     try:
-        # Generate unique filename
         file_extension = Path(file.filename).suffix
         base_name = Path(file.filename).stem
         candidate_name = f"{base_name}{file_extension}"
@@ -698,12 +656,10 @@ async def upload_file_async(
         unique_filename = candidate_name
         file_path = UPLOAD_DIR / unique_filename
         
-        # Save file
         contents = await file.read()
         with open(file_path, "wb") as f:
             f.write(contents)
         
-        # Save metadata to database
         with get_session() as session:
             document = Document(
                 filename=file.filename,
@@ -718,7 +674,6 @@ async def upload_file_async(
             session.commit()
             session.refresh(document)
             
-            # Create processing task
             task = FileProcessingTask(
                 document_id=document.id,
                 status=ProcessingStatus.UPLOADING,
@@ -729,7 +684,6 @@ async def upload_file_async(
             session.commit()
             session.refresh(task)
             
-            # Start background processing
             metadata = {
                 "document_id": document.id,
                 "filename": file.filename,

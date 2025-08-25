@@ -1,4 +1,4 @@
-# File ingestion module for processing PDF documents
+
 """
 This module contains utilities for:
 - Extracting text from PDF files (extractor.py)

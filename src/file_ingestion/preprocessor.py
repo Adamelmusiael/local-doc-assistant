@@ -1,11 +1,9 @@
 from typing import List, Dict
 
-# Try relative imports first, fallback to direct imports for testing
 try:
     from .extractor import extract_text_from_pdf
     from .chunker import chunk_text
 except ImportError:
-    # For standalone testing
     from .extractor import extract_text_from_pdf
     from .chunker import chunk_text
 
