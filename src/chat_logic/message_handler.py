@@ -8,6 +8,7 @@ from openai import AsyncOpenAI, OpenAI
 
 from .prompt_builder import build_prompt
 from .message_store import get_chat_history as _get_chat_history, store_chat_message as _store_chat_message
+from .query_analyzer import analyze_query_complexity, calculate_optimal_chunks
 from vectorstore.qdrant_search import search_documents, search_documents_by_ids
 from db.models import Document
 
@@ -145,6 +146,78 @@ def score_confidence(answer, chunks):
 def score_hallucination(answer, chunks):
     return None
 
+def search_documents_adaptive(
+    user_question: str,
+    selected_document_ids: Optional[List[int]] = None,
+    search_mode: str = "all",
+    model_name: str = None
+) -> tuple[List[Dict], Dict]:
+    """
+    Perform adaptive document search based on query complexity analysis
+    
+    Args:
+        user_question (str): The user's query
+        selected_document_ids (List[int], optional): Selected document IDs
+        search_mode (str): Search mode ("all", "selected_only", "hybrid")
+        model_name (str): Model name for confidentiality filtering
+        
+    Returns:
+        tuple: (chunks, query_analysis) - Retrieved chunks and analysis details
+    """
+    # Analyze query complexity
+    query_analysis = analyze_query_complexity(user_question)
+    
+    # Calculate optimal chunk count considering available documents
+    available_doc_count = len(selected_document_ids) if selected_document_ids else None
+    optimal_chunks = calculate_optimal_chunks(query_analysis, available_doc_count)
+    
+    # Perform search based on mode with adaptive chunk count
+    if search_mode == "selected_only" and selected_document_ids:
+        top_chunks = search_documents_by_ids(
+            user_question,
+            selected_document_ids,
+            limit=optimal_chunks,
+            model_name=model_name
+        )
+        
+    elif search_mode == "hybrid" and selected_document_ids:
+        # Distribute chunks between selected and general search
+        selected_chunk_ratio = 0.6  # 60% from selected documents
+        selected_chunks_count = max(1, int(optimal_chunks * selected_chunk_ratio))
+        additional_chunks_count = optimal_chunks - selected_chunks_count
+        
+        # Get chunks from selected documents first
+        selected_chunks = search_documents_by_ids(
+            user_question,
+            selected_document_ids,
+            limit=selected_chunks_count,
+            model_name=model_name
+        )
+        
+        # Get additional chunks from all documents
+        additional_chunks = search_documents(
+            user_question, 
+            limit=additional_chunks_count, 
+            model_name=model_name
+        )
+        
+        # Combine results (selected chunks first, then additional)
+        top_chunks = selected_chunks + additional_chunks
+        
+    else:
+        # Standard semantic search across all documents
+        top_chunks = search_documents(
+            user_question, 
+            limit=optimal_chunks, 
+            model_name=model_name
+        )
+    
+    # Add analysis info to be used in prompt building
+    query_analysis["chunks_retrieved"] = len(top_chunks)
+    query_analysis["chunks_requested"] = optimal_chunks
+    
+    return top_chunks, query_analysis
+
 def store_chat_message(session_id, role, content, sources=None, confidence=None, hallucination=None):
     metadata = {
         "sources": json.dumps(sources) if sources is not None else None,
@@ -164,42 +237,28 @@ def handle_chat_message(
     if model.lower() not in [m.lower() for m in allowed_models]:
         raise ValueError(f"Model '{model}' is not supported. Please choose one of: {allowed_models}")
     
+    # Confidentiality validation
     try:
-        if validate_model_document_compatibility is None:
-            pass  # Skip validation if module not available
-        else:
-            is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
-            if not is_valid:
-                raise ValueError(error_message)
+        from security import validate_model_document_compatibility
+        is_valid, error_message = validate_model_document_compatibility(model, selected_document_ids)
+        if not is_valid:
+            raise ValueError(error_message)
     except ImportError:
+        # If security module is not available, continue without validation
         pass
     
     chat_history = get_chat_history(session_id)
     
-    if search_mode == "selected_only" and selected_document_ids:
-        top_chunks = search_documents_by_ids(
-            user_question,
-            selected_document_ids,
-            limit=5,
-            model_name=model
-        )
-        
-    elif search_mode == "hybrid" and selected_document_ids:
-        selected_chunks = search_documents_by_ids(
-            user_question,
-            selected_document_ids,
-            limit=3,
-            model_name=model
-        )
-        
-        additional_chunks = search_documents(user_question, limit=2, model_name=model)
-        
-        top_chunks = selected_chunks + additional_chunks
-        
-    else:
-        top_chunks = search_documents(user_question, limit=5, model_name=model)
+    # Use adaptive search instead of fixed chunk counts
+    top_chunks, query_analysis = search_documents_adaptive(
+        user_question=user_question,
+        selected_document_ids=selected_document_ids,
+        search_mode=search_mode,
+        model_name=model
+    )
     
-    prompt = build_prompt(top_chunks, chat_history, user_question)
+    # Build prompt with additional context about the analysis
+    prompt = build_prompt(top_chunks, chat_history, user_question, query_analysis)
     store_chat_message(session_id, role="user", content=user_question)
     answer = generate_response(prompt, model=model)
     sources = extract_sources(top_chunks)
@@ -215,7 +274,13 @@ def handle_chat_message(
         "hallucination": hallucination,
         "search_mode": search_mode,
         "selected_documents": selected_document_ids,
-        "chunks_used": len(top_chunks)
+        "chunks_used": len(top_chunks),
+        "query_analysis": {
+            "complexity_level": query_analysis["complexity_level"],
+            "query_type": query_analysis["query_type"],
+            "chunks_requested": query_analysis["chunks_requested"],
+            "chunks_retrieved": query_analysis["chunks_retrieved"]
+        }
     } 
 
 
@@ -257,33 +322,29 @@ async def handle_chat_message_stream(
         
         chat_history = get_chat_history(session_id)
         
-        if search_mode == "selected_only" and selected_document_ids:
-            top_chunks = search_documents_by_ids(
-                user_question,
-                selected_document_ids,
-                limit=5,
-                model_name=model
-            )
-        elif search_mode == "hybrid" and selected_document_ids:
-            selected_chunks = search_documents_by_ids(
-                user_question,
-                selected_document_ids,
-                limit=3,
-                model_name=model
-            )
-            additional_chunks = search_documents(user_question, limit=2, model_name=model)
-            top_chunks = selected_chunks + additional_chunks
-        else:
-            top_chunks = search_documents(user_question, limit=5, model_name=model)
+        # Use adaptive search instead of fixed chunk counts
+        top_chunks, query_analysis = search_documents_adaptive(
+            user_question=user_question,
+            selected_document_ids=selected_document_ids,
+            search_mode=search_mode,
+            model_name=model
+        )
         
+        # Send sources info with analysis details
         yield {
             "type": "sources",
             "sources": extract_sources(top_chunks),
-            "chunks_used": len(top_chunks)
+            "chunks_used": len(top_chunks),
+            "query_analysis": {
+                "complexity": query_analysis["complexity_level"],
+                "query_type": query_analysis["query_type"],
+                "chunks_requested": query_analysis["chunks_requested"],
+                "chunks_retrieved": query_analysis["chunks_retrieved"]
+            }
         }
         
         yield {"type": "status", "content": "Generating response..."}
-        prompt = build_prompt(top_chunks, chat_history, user_question)
+        prompt = build_prompt(top_chunks, chat_history, user_question, query_analysis)
         
         store_chat_message(session_id, role="user", content=user_question)
         
