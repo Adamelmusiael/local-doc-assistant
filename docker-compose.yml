@@ -23,6 +23,23 @@ services:
       - ./upload_files:/app/upload_files
     environment:
       - QDRANT_URL=http://qdrant:6333
+      - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://frontend:3000
+
+  # Frontend service (React + Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai-assistant-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   qdrant_data:

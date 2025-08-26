@@ -9,10 +9,12 @@ Respond in **English**.
 
 DOCUMENTS:
 {chunks_go_here}
-
+{analysis_context}
 OPTIONAL CHAT HISTORY:
 {chat_history_goes_here}
 
 USER QUESTION:
 {user_question_goes_here}
+
+IMPORTANT: Focus primarily on the document content above. Use chat history only for context, but prioritize fresh information from the documents for your answer.
 ''' 

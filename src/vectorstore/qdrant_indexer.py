@@ -1,11 +1,13 @@
-from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct, VectorParams, Distance
-from .embedder import embed_text
-from typing import List
-import uuid
 import os
 import time
-from qdrant_client.http.exceptions import ResponseHandlingException
+import uuid
+from typing import List
+
+from qdrant_client import QdrantClient
+from qdrant_client.models import PointStruct, VectorParams, Distance
+from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
+
+from .embedder import embed_text
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 client = QdrantClient(QDRANT_URL)
 
@@ -42,9 +44,7 @@ def index_chunks(chunks: List[dict], collection_name: str = "documents"):
 
 def ensure_collection(collection_name: str = "documents"):
     """Create Qdrant collection if it does not exist."""
-    from qdrant_client.http.exceptions import UnexpectedResponse
     try:
-        # Check if collection exists
         client.get_collection(collection_name)
         print(f"Qdrant collection '{collection_name}' already exists.")
     except Exception as e:
@@ -58,7 +58,7 @@ def ensure_collection(collection_name: str = "documents"):
 def ensure_collection_with_retry(max_retries=10, delay=3):
     for attempt in range(max_retries):
         try:
-            ensure_collection()  # your existing function
+            ensure_collection() 
             print("Qdrant is ready!")
             return
         except ResponseHandlingException as e:

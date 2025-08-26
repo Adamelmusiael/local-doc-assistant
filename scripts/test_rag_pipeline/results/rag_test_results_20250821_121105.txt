@@ -1,0 +1,171 @@
+RAG PIPELINE TEST RESULTS
+================================================================================
+
+TEST CONFIGURATION
+----------------------------------------
+Date: 2025-08-21 12:11:05
+Models tested: mistral, llama3.1-8b-128k, qwen2.5-1m
+Questions: 5
+Documents used: 17
+Total tests: 3 × 5 = 15
+
+DOCUMENTS USED
+----------------------------------------
+[*] Document_1 (ID: 1)
+[*] Document_2 (ID: 2)
+[*] Document_3 (ID: 3)
+[*] Document_4 (ID: 4)
+[*] Document_5 (ID: 5)
+[*] Document_6 (ID: 6)
+[*] Document_7 (ID: 7)
+[*] Document_8 (ID: 8)
+[*] Document_9 (ID: 9)
+[*] Document_10 (ID: 10)
+[*] Document_11 (ID: 11)
+[*] Document_12 (ID: 12)
+[*] Document_13 (ID: 13)
+[*] Document_14 (ID: 14)
+[*] Document_15 (ID: 15)
+[*] Document_16 (ID: 16)
+[*] Document_17 (ID: 17)
+
+SUMMARY
+----------------------------------------
+Successful tests: 15/15
+Success rate: 100.0%
+
+MODEL PERFORMANCE
+----------------------------------------
+mistral              | 100.0% success |  15.8s avg
+llama3.1-8b-128k     | 100.0% success |  16.2s avg
+qwen2.5-1m           | 100.0% success |  15.9s avg
+
+DETAILED RESULTS
+================================================================================
+
+QUESTION 1: What is the main business or service described in these documents?
+--------------------------------------------------------------------------------
+
+[M] MODEL: mistral
+[T] Response time: 22.58 seconds
+[C] Chunks used: 0
+[A] Answer:
+ Based on the provided documents, it appears that the primary focus of the business is a real estate development and investment firm. The documents mention projects related to construction, property acquisition, and land development. However, there isn't explicit information about the specific services offered by the company beyond real estate-related activities.
+
+In summary, the main business or service described in these documents seems to be real estate development and investment.
+
+[M] MODEL: llama3.1-8b-128k
+[T] Response time: 18.26 seconds
+[C] Chunks used: 0
+[A] Answer:
+Based on the provided documents, it appears that the primary focus of the business is a real estate development and investment firm. The documents mention projects related to construction, property acquisition, and land development. However, there isn't explicit information about the specific services offered by the company beyond real estate-related activities.
+
+In summary, the main business or service described in these documents seems to be real estate development and investment.
+
+[M] MODEL: qwen2.5-1m
+[T] Response time: 18.07 seconds
+[C] Chunks used: 0
+[A] Answer:
+Based on the provided documents, it appears that the primary focus of the business is a real estate development and investment firm. The documents mention projects related to construction, property acquisition, and land development. However, there isn't explicit information about the specific services offered by the company beyond real estate-related activities.
+
+In summary, the main business or service described in these documents seems to be real estate development and investment.
+
+================================================================================
+QUESTION 2: What are the key pricing or cost details mentioned?
+--------------------------------------------------------------------------------
+
+[M] MODEL: mistral
+[T] Response time: 11.91 seconds
+[C] Chunks used: 0
+[A] Answer:
+ Based on the provided documents, I could not find sufficient information about the key pricing or cost details related to the services offered by the real estate development and investment firm.
+
+[M] MODEL: llama3.1-8b-128k
+[T] Response time: 14.78 seconds
+[C] Chunks used: 0
+[A] Answer:
+I'm sorry, but I could not find sufficient information in the provided documents to answer your question. 
+
+The only relevant response is from message 120 where I indicated that there wasn't enough information about pricing or costs available within the given documentation.
+
+[M] MODEL: qwen2.5-1m
+[T] Response time: 12.71 seconds
+[C] Chunks used: 0
+[A] Answer:
+I'm sorry, but I could not find sufficient information in the provided documents to answer your question.
+
+================================================================================
+QUESTION 3: Who are the main contact persons and their roles?
+--------------------------------------------------------------------------------
+
+[M] MODEL: mistral
+[T] Response time: 12.79 seconds
+[C] Chunks used: 0
+[A] Answer:
+ Based on the provided documents, there is no information about specific contact persons or their roles for the real estate development and investment firm.
+
+[M] MODEL: llama3.1-8b-128k
+[T] Response time: 14.42 seconds
+[C] Chunks used: 0
+[A] Answer:
+Based on the provided documents, there is no information about specific contact persons or their roles for the real estate development and investment firm.
+
+[M] MODEL: qwen2.5-1m
+[T] Response time: 14.57 seconds
+[C] Chunks used: 0
+[A] Answer:
+Based on the provided documents, there is no information about specific contact persons or their roles for the real estate development and investment firm.
+
+================================================================================
+QUESTION 4: What are the technical requirements or specifications mentioned?
+--------------------------------------------------------------------------------
+
+[M] MODEL: mistral
+[T] Response time: 14.74 seconds
+[C] Chunks used: 0
+[A] Answer:
+ Based on the provided documents, I could not find sufficient information about the technical requirements or specifications mentioned for the real estate development and investment firm.
+
+[M] MODEL: llama3.1-8b-128k
+[T] Response time: 15.85 seconds
+[C] Chunks used: 0
+[A] Answer:
+> "I'm sorry, but I could not find sufficient information in the provided documents to answer your question."
+
+[M] MODEL: qwen2.5-1m
+[T] Response time: 16.25 seconds
+[C] Chunks used: 0
+[A] Answer:
+> "I'm sorry, but I could not find sufficient information in the provided documents to answer your question."
+
+================================================================================
+QUESTION 5: What are the delivery timelines or project phases described?
+--------------------------------------------------------------------------------
+
+[M] MODEL: mistral
+[T] Response time: 17.07 seconds
+[C] Chunks used: 0
+[A] Answer:
+ Based on the provided documents, I could not find sufficient information about the delivery timelines or project phases described for the real estate development and investment firm.
+
+[M] MODEL: llama3.1-8b-128k
+[T] Response time: 17.86 seconds
+[C] Chunks used: 0
+[A] Answer:
+Based on the provided documents, I could not find sufficient information about the delivery timelines or project phases described for the real estate development and investment firm.
+
+[M] MODEL: qwen2.5-1m
+[T] Response time: 17.92 seconds
+[C] Chunks used: 0
+[A] Answer:
+Based on the provided documents, I could not find sufficient information about the delivery timelines or project phases described for the real estate development and investment firm.
+
+================================================================================
+
+ALL QUESTIONS TESTED
+----------------------------------------
+1. What is the main business or service described in these documents?
+2. What are the key pricing or cost details mentioned?
+3. Who are the main contact persons and their roles?
+4. What are the technical requirements or specifications mentioned?
+5. What are the delivery timelines or project phases described?

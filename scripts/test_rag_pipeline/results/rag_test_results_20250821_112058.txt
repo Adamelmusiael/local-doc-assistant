@@ -1,0 +1,193 @@
+RAG PIPELINE TEST RESULTS
+================================================================================
+
+TEST CONFIGURATION
+----------------------------------------
+Date: 2025-08-21 11:20:58
+Models tested: mistral, llama3.1-8b-128k, qwen2.5-1m
+Questions: 5
+Documents used: 17
+Total tests: 3 × 5 = 15
+
+DOCUMENTS USED
+----------------------------------------
+📄 Document_1 (ID: 1)
+📄 Document_2 (ID: 2)
+📄 Document_3 (ID: 3)
+📄 Document_4 (ID: 4)
+📄 Document_5 (ID: 5)
+📄 Document_6 (ID: 6)
+📄 Document_7 (ID: 7)
+📄 Document_8 (ID: 8)
+📄 Document_9 (ID: 9)
+📄 Document_10 (ID: 10)
+📄 Document_11 (ID: 11)
+📄 Document_12 (ID: 12)
+📄 Document_13 (ID: 13)
+📄 Document_14 (ID: 14)
+📄 Document_15 (ID: 15)
+📄 Document_16 (ID: 16)
+📄 Document_17 (ID: 17)
+
+SUMMARY
+----------------------------------------
+Successful tests: 15/15
+Success rate: 100.0%
+
+MODEL PERFORMANCE
+----------------------------------------
+mistral              | 100.0% success |  22.2s avg
+llama3.1-8b-128k     | 100.0% success |  22.3s avg
+qwen2.5-1m           | 100.0% success |  21.5s avg
+
+DETAILED RESULTS
+================================================================================
+
+QUESTION 1: What is the main business or service described in these documents?
+--------------------------------------------------------------------------------
+
+🤖 MODEL: mistral
+⏱️  Response time: 26.23 seconds
+📊 Chunks used: 0
+📝 Answer:
+ Based on the provided documents, it appears that the main business or service described is related to a real estate development project. The documents mention "property acquisition", "site development", and "construction management" as some of the key activities involved. However, for a more precise description, further analysis of the documents might be necessary.
+
+Here are some quotes from the documents that support this:
+1. Document 1: "The proposed project involves the acquisition of a 20-acre parcel of land..."
+2. Document 2: "...the site development phase will include clearing, grading, and utility installation."
+3. Document 3: "Our construction management team will oversee the construction of residential units, commercial spaces, and amenities."
+
+🤖 MODEL: llama3.1-8b-128k
+⏱️  Response time: 22.35 seconds
+📊 Chunks used: 0
+📝 Answer:
+Based on the provided documents, it appears that the main business or service described is related to a real estate development project. The documents mention "property acquisition", "site development", and "construction management" as some of the key activities involved.
+
+Here are some quotes from the documents that support this:
+
+1. Document 1: "The proposed project involves the acquisition of a 20-acre parcel of land..."
+2. Document 2: "...the site development phase will include clearing, grading, and utility installation."
+3. Document 3: "Our construction management team will oversee the construction of residential units, commercial spaces, and amenities."
+
+🤖 MODEL: qwen2.5-1m
+⏱️  Response time: 15.44 seconds
+📊 Chunks used: 0
+📝 Answer:
+Based on the provided documents, it appears that the main business or service described is related to a real estate development project. The documents mention "property acquisition," "site development," and "construction management" as some of the key activities involved.
+
+================================================================================
+QUESTION 2: What are the key pricing or cost details mentioned?
+--------------------------------------------------------------------------------
+
+🤖 MODEL: mistral
+⏱️  Response time: 13.96 seconds
+📊 Chunks used: 0
+📝 Answer:
+ Based on the provided documents, I couldn't find sufficient information about any specific pricing or cost details. However, the documents do mention activities such as property acquisition and site development which would likely involve costs but no concrete figures are provided in these documents. For a more detailed understanding of the pricing or cost details, further analysis might be necessary.
+
+🤖 MODEL: llama3.1-8b-128k
+⏱️  Response time: 13.25 seconds
+📊 Chunks used: 0
+📝 Answer:
+I'm sorry, but I could not find sufficient information in the provided documents to answer your question.
+
+🤖 MODEL: qwen2.5-1m
+⏱️  Response time: 14.25 seconds
+📊 Chunks used: 0
+📝 Answer:
+I'm sorry, but I could not find sufficient information in the provided documents to answer your question.
+
+================================================================================
+QUESTION 3: Who are the main contact persons and their roles?
+--------------------------------------------------------------------------------
+
+🤖 MODEL: mistral
+⏱️  Response time: 17.40 seconds
+📊 Chunks used: 0
+📝 Answer:
+ Based on the provided documents, I couldn't find sufficient information about the main contact persons and their roles. For a more detailed understanding of who the key contacts are and their respective roles, further analysis might be necessary.
+
+🤖 MODEL: llama3.1-8b-128k
+⏱️  Response time: 19.43 seconds
+📊 Chunks used: 0
+📝 Answer:
+> "I'm sorry, but I could not find sufficient information in the provided documents to answer your question."
+
+🤖 MODEL: qwen2.5-1m
+⏱️  Response time: 20.79 seconds
+📊 Chunks used: 0
+📝 Answer:
+Based on the provided documents, I couldn't find sufficient information about the main contact persons and their roles. For a more detailed understanding of who the key contacts are and their respective roles, further analysis might be necessary.
+
+================================================================================
+QUESTION 4: What are the technical requirements or specifications mentioned?
+--------------------------------------------------------------------------------
+
+🤖 MODEL: mistral
+⏱️  Response time: 20.40 seconds
+📊 Chunks used: 0
+📝 Answer:
+ Based on the provided documents, I couldn't find sufficient information about any specific technical requirements or specifications. For a more detailed understanding of the technical requirements or specifications involved in the real estate development project, further analysis might be necessary.
+
+🤖 MODEL: llama3.1-8b-128k
+⏱️  Response time: 23.04 seconds
+📊 Chunks used: 0
+📝 Answer:
+Based on the provided documents, I couldn't find sufficient information about any specific technical requirements or specifications. For a more detailed understanding of the technical requirements or specifications involved in the real estate development project, further analysis might be necessary.
+
+(Document 102)
+
+🤖 MODEL: qwen2.5-1m
+⏱️  Response time: 22.42 seconds
+📊 Chunks used: 0
+📝 Answer:
+Based on the provided documents, I couldn't find sufficient information about any specific technical requirements or specifications. For a more detailed understanding of the technical requirements or specifications involved in the real estate development project, further analysis might be necessary.
+
+================================================================================
+QUESTION 5: What are the delivery timelines or project phases described?
+--------------------------------------------------------------------------------
+
+🤖 MODEL: mistral
+⏱️  Response time: 32.87 seconds
+📊 Chunks used: 0
+📝 Answer:
+ Based on the provided documents, the real estate development project is divided into several phases. The first phase mentioned is property acquisition, followed by site development which includes clearing, grading, and utility installation. No specific timelines for these phases are mentioned in the documents. The construction management team will oversee the construction of residential units, commercial spaces, and amenities, but there is no information regarding the timeline for this phase either. For a more detailed understanding of the delivery timelines or project phases with their respective timelines, further analysis might be necessary.
+
+Here are some quotes from the documents that support this:
+1. Document 1: "The proposed project involves the acquisition of a 20-acre parcel of land..."
+2. Document 2: "...the site development phase will include clearing, grading, and utility installation."
+3. Document 3: "Our construction management team will oversee the construction of residential units, commercial spaces, and amenities."
+
+🤖 MODEL: llama3.1-8b-128k
+⏱️  Response time: 33.33 seconds
+📊 Chunks used: 0
+📝 Answer:
+Based on the provided documents, the real estate development project is divided into several phases. The first phase mentioned is property acquisition, followed by site development which includes clearing, grading, and utility installation. No specific timelines for these phases are mentioned in the documents. The construction management team will oversee the construction of residential units, commercial spaces, and amenities, but there is no information regarding the timeline for this phase either.
+
+Here are some quotes from the documents that support this:
+
+1. Document 1: "The proposed project involves the acquisition of a 20-acre parcel of land..."
+2. Document 2: "...the site development phase will include clearing, grading, and utility installation."
+3. Document 3: "Our construction management team will oversee the construction of residential units, commercial spaces, and amenities."
+
+🤖 MODEL: qwen2.5-1m
+⏱️  Response time: 34.75 seconds
+📊 Chunks used: 0
+📝 Answer:
+Based on the provided documents, the real estate development project is divided into several phases. The first phase mentioned is property acquisition, followed by site development which includes clearing, grading, and utility installation. No specific timelines for these phases are mentioned in the documents. The construction management team will oversee the construction of residential units, commercial spaces, and amenities, but there is no information regarding the timeline for this phase either.
+
+Here are some quotes from the documents that support this:
+
+1. Document 1: "The proposed project involves the acquisition of a 20-acre parcel of land..."
+2. Document 2: "...the site development phase will include clearing, grading, and utility installation."
+3. Document 3: "Our construction management team will oversee the construction of residential units, commercial spaces, and amenities."
+
+================================================================================
+
+ALL QUESTIONS TESTED
+----------------------------------------
+1. What is the main business or service described in these documents?
+2. What are the key pricing or cost details mentioned?
+3. Who are the main contact persons and their roles?
+4. What are the technical requirements or specifications mentioned?
+5. What are the delivery timelines or project phases described?

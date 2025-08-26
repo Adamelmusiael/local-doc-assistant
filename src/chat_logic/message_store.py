@@ -44,7 +44,6 @@ def store_chat_message(
             confidence=metadata.get("confidence"),
             hallucination=metadata.get("hallucination"),
         )
-        # Optionally handle token_count if present in model and metadata
         if hasattr(chat_message, "token_count") and "token_count" in metadata:
             setattr(chat_message, "token_count", metadata["token_count"])
         session.add(chat_message)
