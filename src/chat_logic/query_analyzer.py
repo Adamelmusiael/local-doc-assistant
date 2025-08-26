@@ -9,6 +9,12 @@ import re
 from typing import Dict, List
 import os
 
+try:
+    from config.config_loader import load_config
+    config = load_config()
+except ImportError:
+    config = {}
+
 
 def analyze_query_complexity(query: str) -> Dict:
     """
@@ -182,10 +188,10 @@ def get_recommended_chunk_count(complexity_level: str, query_type: str, scope: s
         int: Recommended number of chunks to retrieve
     """
     base_chunks = {
-        "simple": int(os.getenv("SIMPLE_QUERY_CHUNKS", "5")),
-        "medium": int(os.getenv("MEDIUM_QUERY_CHUNKS", "10")),
-        "complex": int(os.getenv("COMPLEX_QUERY_CHUNKS", "15")),
-        "comprehensive": int(os.getenv("COMPREHENSIVE_QUERY_CHUNKS", "25"))
+        "simple": int(config.get("SIMPLE_QUERY_CHUNKS", "5")),
+        "medium": int(config.get("MEDIUM_QUERY_CHUNKS", "10")),
+        "complex": int(config.get("COMPLEX_QUERY_CHUNKS", "15")),
+        "comprehensive": int(config.get("COMPREHENSIVE_QUERY_CHUNKS", "25"))
     }
     
     chunk_count = base_chunks.get(complexity_level, 10)
@@ -198,8 +204,8 @@ def get_recommended_chunk_count(complexity_level: str, query_type: str, scope: s
     elif query_type == "analysis":
         chunk_count += 3  
     
-    min_chunks = int(os.getenv("MIN_CHUNKS", "3"))
-    max_chunks = int(os.getenv("MAX_CHUNKS", "25"))
+    min_chunks = int(config.get("MIN_CHUNKS", "3"))
+    max_chunks = int(config.get("MAX_CHUNKS", "25"))
     
     return max(min_chunks, min(max_chunks, chunk_count))
 
@@ -222,14 +228,14 @@ def calculate_optimal_chunks(query_analysis: Dict, available_documents: int = No
             return 0
         elif available_documents == 1:
             if query_analysis["complexity_level"] in ["complex", "comprehensive"]:
-                base_chunks = min(base_chunks + 5, int(os.getenv("MAX_CHUNKS", "25")))
+                base_chunks = min(base_chunks + 5, int(config.get("MAX_CHUNKS", "25")))
         elif available_documents <= 3:
             # few documents -> normal chunk count
             pass
         else:
             # many documents -> might need slightly more for better coverage
             if query_analysis["complexity_level"] in ["comprehensive"]:
-                base_chunks = min(base_chunks + 3, int(os.getenv("MAX_CHUNKS", "25")))
+                base_chunks = min(base_chunks + 3, int(config.get("MAX_CHUNKS", "25")))
     
     return base_chunks
 
